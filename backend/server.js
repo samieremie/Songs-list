@@ -82,7 +82,6 @@ app.delete("/songs/:id", (req, res) => {
       found = true;
       continue;
     }
-    if (found) song.id -= 1; // shift IDs down
     updatedSongs.push(song);
   }
 
