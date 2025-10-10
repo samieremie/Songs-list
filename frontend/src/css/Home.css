@@ -1,0 +1,19 @@
+.page-title {
+  color: #242424;
+}
+
+.letter-heading {
+  color: #242424;
+}
+
+@media screen and (max-width: 768px) {
+  .page-title {
+    font-size: 2em;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  .page-title {
+    font-size: 3em;
+  }
+}

@@ -1,0 +1,96 @@
+.song-card {
+  background-color: #fff;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  color: #242424;
+  justify-content: space-between;
+  padding: 1em;
+  margin: 25px 0;
+  height: fit-content;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.song-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  height: fit-content;
+  align-items: center;
+}
+
+.more-info-btn {
+  border-radius: 12px;
+  padding: 1em;
+  border: none;
+  background-color: #646cff;
+  color: #f0f0f0;
+}
+
+.more-info-btn:hover {
+  cursor: pointer;
+  background-color: #242424;
+}
+
+.song-title {
+  font-size: 1em;
+  font-weight: 800;
+}
+
+.music-scale {
+  font-size: 0.9em;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.mark-as-sung-btn,
+.delete-btn,
+.update-btn {
+  width: fit-content;
+  height: fit-content;
+  padding: 1em;
+  border-radius: 12px;
+  border: none;
+}
+
+.mark-as-sung-btn {
+  background-color: #646cff;
+  color: #f0f0f0;
+}
+
+.mark-as-sung-btn:hover {
+  cursor: pointer;
+  background-color: #535bf2;
+  color: #f0f0f0;
+}
+
+.delete-btn:hover {
+  cursor: pointer;
+  background-color: rgb(211, 35, 35);
+  color: #f0f0f0;
+}
+
+.update-btn {
+  background-color: #5e5e5e;
+  color: #f0f0f0;
+}
+
+.update-btn:hover {
+  cursor: pointer;
+  background-color: #242424;
+  color: #f0f0f0;
+}
+
+.right-btns {
+  display: flex;
+  gap: 15px;
+}
+
+.song-card.recently-sung {
+  border: 2px solid #ad4d4d;
+  background-color: #ffe6e6;
+}

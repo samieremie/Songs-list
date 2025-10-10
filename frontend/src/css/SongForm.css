@@ -1,0 +1,45 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.title-input,
+.scale-input {
+  width: 95%;
+  padding: 1em;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
+  cursor: text;
+}
+
+.title-input:active,
+.scale-input:active {
+  transform: scale(0.95);
+}
+
+.title-input:focus,
+.scale-input:focus {
+  outline: 2px solid #242424;
+}
+
+.title-input:hover,
+.scale-input:hover {
+  box-shadow: 0 0 0 2.5px #2f303d, 0px 0px 25px -15px #000;
+}
+
+.add-btn {
+  margin-top: 30px;
+  padding: 1em;
+  background-color: #646cff;
+  color: #f0f0f0;
+  border-radius: 12px;
+  border: none;
+}
+
+.add-btn:hover {
+  background-color: #535bf2;
+  cursor: pointer;
+}
