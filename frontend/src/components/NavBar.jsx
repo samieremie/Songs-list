@@ -11,7 +11,9 @@ function NavBar() {
         />
       </Link>
       <div className="navbar-links">
-        <Link to="/">Lista Oficiala</Link>
+        <Link to="/" className="link">
+          Lista Oficiala
+        </Link>
         <Link to="/addsong">
           <button className="addsong-btn">Adauga Cantare</button>
         </Link>

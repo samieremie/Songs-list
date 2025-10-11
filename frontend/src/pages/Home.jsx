@@ -63,7 +63,7 @@ function Home() {
   return (
     <div>
       <h1 className="page-title">Lista de cantari tineret Elim Bruxelles</h1>
-      <SearchBar />
+      {/* <SearchBar /> */}
       <div className="songs-list">
         {groupedEntries.map(([letter, songs]) => (
           <div key={letter} className="song-group">

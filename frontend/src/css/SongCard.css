@@ -17,19 +17,67 @@
   width: 100%;
   height: fit-content;
   align-items: center;
+  cursor: pointer;
 }
 
-.more-info-btn {
-  border-radius: 12px;
+.more-info {
   padding: 1em;
   border: none;
-  background-color: #646cff;
-  color: #f0f0f0;
+  color: #646cff;
+  font-weight: 700;
 }
 
-.more-info-btn:hover {
-  cursor: pointer;
-  background-color: #242424;
+.arrow-icon {
+  display: inline-block;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  vertical-align: middle;
+  transition: transform 0.5s cubic-bezier(0.25, 1.7, 0.35, 0.8);
+}
+
+/* The two bars forming the arrow */
+.arrow-icon .left-bar,
+.arrow-icon .right-bar {
+  position: absolute;
+  top: 8px;
+  width: 10px;
+  height: 2px;
+  background: #646cff;
+  border-radius: 2px;
+  transition: transform 0.5s cubic-bezier(0.25, 1.7, 0.35, 0.8);
+}
+
+/* Default (arrow pointing down) */
+.arrow-icon .left-bar {
+  left: 1px;
+  transform: rotate(35deg);
+}
+.arrow-icon .right-bar {
+  right: 1px;
+  transform: rotate(-35deg);
+}
+
+/* When open (arrow pointing up) */
+.arrow-icon.open .left-bar {
+  transform: rotate(-35deg);
+}
+.arrow-icon.open .right-bar {
+  transform: rotate(35deg);
+}
+
+.song-details {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease,
+    /* smooth, same speed for both directions */ opacity 0.4s ease;
+}
+
+.song-details.show {
+  max-height: 600px; /* adjust to fit your content */
+  opacity: 1;
 }
 
 .song-title {

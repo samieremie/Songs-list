@@ -12,7 +12,7 @@ function SearchBar() {
         id="query"
         className="input"
         type="search"
-        placeholder="Search..."
+        placeholder="Cauta..."
         name="searchbar"
       />
     </div>

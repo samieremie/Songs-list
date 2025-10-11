@@ -34,32 +34,41 @@ function SongCard({ song, onDelete }) {
   return (
     <div className={`song-card ${isRecent ? "recently-sung" : ""}`}>
       {/* Always visible */}
-      <div className="song-header">
+      <div className="song-header" onClick={toggleExpanded}>
         <h3 className="song-title">{song.title}</h3>
-        <button className="more-info-btn" onClick={toggleExpanded}>
+        <div
+          className="more-info"
+          onClick={(e) => {
+            e.stopPropagation(); // prevents double-triggering when clicking the button
+            toggleExpanded();
+          }}
+        >
           {expanded ? "Ascunde" : "Mai multe"}
-        </button>
+          <span className={`arrow-icon ${expanded ? "open" : ""}`}>
+            <span className="left-bar"></span>
+            <span className="right-bar"></span>
+          </span>
+        </div>
       </div>
 
       {/* Conditionally rendered */}
-      {expanded && (
-        <div className="song-details">
-          <p className="music-scale">
-            <strong>Music Scale:</strong> {song.music_scale}
-          </p>
-          <div className="buttons">
-            <button className="delete-btn" onClick={() => onDelete(song.id)}>
-              Sterge
+
+      <div className={`song-details ${expanded ? "show" : ""}`}>
+        <p className="music-scale">
+          <strong>Music Scale:</strong> {song.music_scale}
+        </p>
+        <div className="buttons">
+          <button className="delete-btn" onClick={() => onDelete(song.id)}>
+            Sterge
+          </button>
+          <div className="right-btns">
+            {/* <button className="update-btn">Modifica</button> */}
+            <button className="mark-as-sung-btn" onClick={handleMarkAsSung}>
+              Cantat
             </button>
-            <div className="right-btns">
-              <button className="update-btn">Modifica</button>
-              <button className="mark-as-sung-btn" onClick={handleMarkAsSung}>
-                Cantat
-              </button>
-            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
