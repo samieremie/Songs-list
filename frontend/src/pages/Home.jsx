@@ -14,9 +14,9 @@ function Home() {
       const { data, error } = await supabase.from("songs").select();
 
       if (error) {
-        setFetchError("Could not fetch the songs");
+        setFetchError("Nu s-au putut încărca cântările. Încearcă din nou.");
         setSongs([]);
-        console.log(error);
+        console.error("Error fetching songs:", error.message);
       }
 
       if (data) {
@@ -34,7 +34,9 @@ function Home() {
 
     if (error) {
       console.error("Error deleting song:", error.message);
+      setFetchError("Cântarea nu a putut fi ștearsă. Încearcă din nou.");
     } else {
+      setFetchError(null);
       // Remove the deleted song from state
       setSongs((prev) => prev.filter((song) => song.id !== id));
     }
@@ -62,8 +64,9 @@ function Home() {
 
   return (
     <div>
-      <h1 className="page-title">Lista de cantari tineret Elim Bruxelles</h1>
+      <h1 className="page-title">Lista de cântări tineret Elim Bruxelles</h1>
       {/* <SearchBar /> */}
+      {fetchError && <p className="error-message">{fetchError}</p>}
       <div className="songs-list">
         {groupedEntries.map(([letter, songs]) => (
           <div key={letter} className="song-group">

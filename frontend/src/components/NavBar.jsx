@@ -12,10 +12,10 @@ function NavBar() {
       </Link>
       <div className="navbar-links">
         <Link to="/" className="link">
-          Lista Oficiala
+          Lista Oficială
         </Link>
         <Link to="/addsong">
-          <button className="addsong-btn">Adauga Cantare</button>
+          <button className="addsong-btn">Adaugă Cântare</button>
         </Link>
       </div>
     </nav>

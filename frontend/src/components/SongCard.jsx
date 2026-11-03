@@ -5,6 +5,7 @@ import { useState } from "react";
 function SongCard({ song, onDelete }) {
   const [expanded, setExpanded] = useState(false); // track if card is expanded
   const [lastSung, setLastSung] = useState(song.last_sung); // track locally
+  const [updateError, setUpdateError] = useState(null);
 
   const toggleExpanded = () => {
     setExpanded(!expanded);
@@ -13,14 +14,16 @@ function SongCard({ song, onDelete }) {
   const handleMarkAsSung = async () => {
     const newDate = lastSung ? null : new Date().toISOString().split("T")[0]; // toggle
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("songs")
       .update({ last_sung: newDate })
       .eq("id", song.id);
 
     if (error) {
       console.error("Error updating last_sung:", error.message);
+      setUpdateError("Nu s-a putut actualiza cântarea. Încearcă din nou.");
     } else {
+      setUpdateError(null);
       setLastSung(newDate); // update local state
       // if (onUpdate) onUpdate(song.id, today); // optional parent callback
     }
@@ -55,19 +58,20 @@ function SongCard({ song, onDelete }) {
 
       <div className={`song-details ${expanded ? "show" : ""}`}>
         <p className="music-scale">
-          <strong>Music Scale:</strong> {song.music_scale}
+          <strong>Gama:</strong> {song.music_scale}
         </p>
         <div className="buttons">
           <button className="delete-btn" onClick={() => onDelete(song.id)}>
-            Sterge
+            Șterge
           </button>
           <div className="right-btns">
-            {/* <button className="update-btn">Modifica</button> */}
+            {/* <button className="update-btn">Modifică</button> */}
             <button className="mark-as-sung-btn" onClick={handleMarkAsSung}>
-              Cantat
+              Cântat
             </button>
           </div>
         </div>
+        {updateError && <p className="error-message">{updateError}</p>}
       </div>
     </div>
   );

@@ -39,7 +39,7 @@ function SongForm({ onSubmit }) {
           />
         </div>
         <button className="add-btn" type="submit">
-          Adauga
+          Adaugă
         </button>
       </div>
     </form>
