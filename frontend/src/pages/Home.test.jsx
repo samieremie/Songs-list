@@ -6,7 +6,10 @@ import { createSupabaseMock } from "../test/supabaseMock";
 
 const mock = vi.hoisted(() => ({ current: null }));
 vi.mock("../api/songsApi", () => ({
-  default: { from: (...args) => mock.current.client.from(...args) },
+  default: {
+    from: (...args) => mock.current.client.from(...args),
+    rpc: (...args) => mock.current.client.rpc(...args),
+  },
 }));
 
 import Home from "./Home";
@@ -64,6 +67,7 @@ describe("Home", () => {
   });
 
   it("asks for confirmation before deleting a song", async () => {
+    window.localStorage.setItem("editorCode", "secret");
     const user = userEvent.setup();
     renderHome();
     await user.click(await screen.findByRole("button", { name: /Aleluia/ }));
@@ -72,12 +76,13 @@ describe("Home", () => {
     const sheet = screen.getByRole("alertdialog", { name: "Ștergi „Aleluia”?" });
     await user.click(within(sheet).getByRole("button", { name: "Renunță" }));
 
-    expect(mock.current.query.delete).not.toHaveBeenCalled();
+    expect(mock.current.client.rpc).not.toHaveBeenCalled();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(screen.getByText("Aleluia")).toBeInTheDocument();
   });
 
-  it("removes a song after the deletion is confirmed", async () => {
+  it("removes a song after the deletion is confirmed, sending the stored code", async () => {
+    window.localStorage.setItem("editorCode", "secret");
     const user = userEvent.setup();
     renderHome();
     await user.click(await screen.findByRole("button", { name: /Aleluia/ }));
@@ -86,10 +91,57 @@ describe("Home", () => {
     mock.current.query.result = { data: null, error: null };
     await user.click(screen.getByRole("button", { name: "Șterge cântarea" }));
 
-    expect(mock.current.query.delete).toHaveBeenCalled();
-    expect(mock.current.query.eq).toHaveBeenCalledWith("id", 2);
+    expect(mock.current.client.rpc).toHaveBeenCalledWith("delete_song", {
+      p_id: 2,
+      p_code: "secret",
+    });
     expect(screen.queryByText("Aleluia")).not.toBeInTheDocument();
     expect(screen.getByText("„Aleluia” a fost ștearsă.")).toBeInTheDocument();
+  });
+
+  it("asks for the editor code before the first deletion", async () => {
+    const user = userEvent.setup();
+    renderHome();
+    await user.click(await screen.findByRole("button", { name: /Aleluia/ }));
+    await user.click(screen.getByRole("button", { name: "Șterge" }));
+
+    const codeSheet = screen.getByRole("dialog", { name: "Introdu codul de editor" });
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+
+    mock.current.query.result = { data: true, error: null };
+    await user.type(within(codeSheet).getByLabelText("Cod de editor"), "secret");
+    await user.click(within(codeSheet).getByRole("button", { name: "Continuă" }));
+
+    expect(mock.current.client.rpc).toHaveBeenCalledWith("check_editor_code", {
+      p_code: "secret",
+    });
+    expect(window.localStorage.getItem("editorCode")).toBe("secret");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("alertdialog", { name: "Ștergi „Aleluia”?" })).toBeInTheDocument();
+  });
+
+  it("forgets the code and explains when it has changed", async () => {
+    window.localStorage.setItem("editorCode", "old");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const user = userEvent.setup();
+    renderHome();
+    await user.click(await screen.findByRole("button", { name: /Aleluia/ }));
+    await user.click(screen.getByRole("button", { name: "Șterge" }));
+
+    mock.current.query.result = {
+      data: null,
+      error: { code: "28000", message: "invalid_editor_code" },
+    };
+    await user.click(screen.getByRole("button", { name: "Șterge cântarea" }));
+
+    expect(
+      screen.getByText("Codul de editor s-a schimbat. Introdu-l din nou.")
+    ).toBeInTheDocument();
+    expect(screen.getByText("Aleluia")).toBeInTheDocument();
+    expect(window.localStorage.getItem("editorCode")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Șterge" }));
+    expect(screen.getByRole("dialog", { name: "Introdu codul de editor" })).toBeInTheDocument();
   });
 
   it("shows a Romanian error message when songs cannot be loaded", async () => {

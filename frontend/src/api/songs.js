@@ -7,12 +7,25 @@ export function listSongs() {
   return supabase.from("songs").select();
 }
 
-export function addSong({ title, musicScale }) {
-  return supabase.from("songs").insert([{ title, music_scale: musicScale }]);
+// Adding and deleting go through database functions that check the shared
+// editor code (see supabase/editor-code.sql).
+export function addSong({ title, musicScale, code }) {
+  return supabase.rpc("add_song", { p_title: title, p_music_scale: musicScale, p_code: code });
 }
 
-export function deleteSong(id) {
-  return supabase.from("songs").delete().eq("id", id);
+export function deleteSong(id, code) {
+  return supabase.rpc("delete_song", { p_id: id, p_code: code });
+}
+
+// Resolves to { data: true } if the code is right, { data: false } if not.
+export function checkEditorCode(code) {
+  return supabase.rpc("check_editor_code", { p_code: code });
+}
+
+// True when Supabase refused the call because the editor code is wrong
+// (for example after the leaders changed it).
+export function isInvalidCodeError(error) {
+  return error?.code === "28000";
 }
 
 export function setLastSung(id, date) {

@@ -4,39 +4,6 @@
   margin-top: 1.75rem;
 }
 
-.field {
-  display: grid;
-  gap: 0.4rem;
-}
-
-.field label {
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.field input {
-  width: 100%;
-  height: 3.25rem;
-  padding: 0 1rem;
-  border: 2px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  font-size: 1.0625rem;
-}
-
-.field input::placeholder {
-  color: var(--text-muted);
-}
-
-.field input:focus {
-  outline: none;
-  border-color: var(--accent-ink);
-}
-
-.field input[aria-invalid="true"] {
-  border-color: var(--danger-ink);
-}
-
 .song-form-submit {
   width: 100%;
   min-height: 3.25rem;

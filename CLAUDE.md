@@ -15,12 +15,13 @@ Songs-list ("Lista de cântări tineret Elim Bruxelles") is a web app for the El
 |---|---|
 | `main.jsx` | Entry point |
 | `pages/` | Route pages: `App.jsx` (router + layout), `Home.jsx` (`/`), `AddSong.jsx` (`/addsong`), `Setlists.jsx` (`/sub-liste`, overview and create), `Setlist.jsx` (`/sub-liste/:date`, one list) |
-| `components/` | `TabBar` (bottom navigation), `SearchBar`, `SongCard` (one song row), `LetterIndex` (A–Z jump strip), `Sheet` (base bottom sheet: scrim, focus, Escape), `ConfirmSheet`, `SetlistPickerSheet` (add a song to sub-lists from the main list), `SongPickerSheet` (add songs from a sub-list page), `SongForm` |
+| `components/` | `TabBar` (bottom navigation), `SearchBar`, `SongCard` (one song row), `LetterIndex` (A–Z jump strip), `Sheet` (base bottom sheet: scrim, focus, Escape), `ConfirmSheet`, `SetlistPickerSheet` (add a song to sub-lists from the main list), `SongPickerSheet` (add songs from a sub-list page), `SongForm`, `EditorCodeForm` / `EditorCodeSheet` (ask for the editor code) |
 | `api/` | `songsApi.js` (Supabase client), `songs.js` (queries on `songs`), `setlists.js` (queries on `setlists` / `setlist_songs`) |
-| `utils/` | `text.js` (diacritic-insensitive search, sorting, grouping, Romanian `plural`), `dates.js` (`sungAgo`, `isRecent`, `todayISO`, `formatServiceDate`, `formatWeekday`, `formatDayMonth`, `untilLabel`, `nextWeekday`) |
+| `utils/` | `editorCode.js` (editor code remembered in `localStorage`), `text.js` (diacritic-insensitive search, sorting, grouping, Romanian `plural`), `dates.js` (`sungAgo`, `isRecent`, `todayISO`, `formatServiceDate`, `formatWeekday`, `formatDayMonth`, `untilLabel`, `nextWeekday`) |
 | `css/` | One plain CSS file per component/page |
 | `test/` | Vitest setup and the shared Supabase mock (pass a `resolver(table)` to answer per table) |
 | `../../supabase/setlists.sql` | One-time Supabase setup for sub-lists (tables, policies, cleanup job). Run it in the SQL Editor. |
+| `../../supabase/editor-code.sql` | One-time Supabase setup for the editor code (`add_song`, `delete_song`, `check_editor_code`, locks `songs`). The real code is set by hand and never committed. |
 | `../public/_redirects` | Netlify SPA fallback (`/* /index.html 200`). Keep it, or direct links to routes return 404. |
 
 ### Design system ("Elim oasis")
@@ -40,7 +41,7 @@ Songs-list ("Lista de cântări tineret Elim Bruxelles") is a web app for the El
 - `setlists`: `id`, `date` (unique: one sub-list per date), `created_at`.
 - `setlist_songs`: `setlist_id` → `setlists` (cascade), `song_id` → `songs` (cascade), `position` (singing order, rewritten 0…n-1 on reorder); primary key `(setlist_id, song_id)`.
 - **Expiry:** the `pg_cron` job `expire-setlists` runs `expire_setlists()` every hour. Once a list's date has passed (Brussels time), it sets each of its songs' `last_sung` to that date and deletes the list. The frontend also only shows lists with `date >= today`.
-- **No authentication.** Anyone with the link can add, delete and update songs. Don't assume RLS restricts anything.
+- **Editor code, no accounts.** Adding and deleting songs need a shared code, checked in Supabase by the `add_song` / `delete_song` RPCs (`supabase/editor-code.sql`); the anon role can't insert or delete in `songs` directly. A wrong code returns SQLSTATE `28000` (`isInvalidCodeError` in `api/songs.js`). Anyone can still read songs, update `last_sung`, and do everything on sub-lists. New write actions on `songs` need their own RPC that checks the code.
 
 ## Build, test & lint
 

@@ -16,7 +16,8 @@ const CHAIN_METHODS = [
 // Builds a fake Supabase client whose query chain resolves to `result`.
 // Every chain method returns the same thenable, so any combination like
 // from().update().eq() can be awaited. Set `query.result` to change the
-// response, or pass `resolver(table)` to answer per table.
+// response, or pass `resolver(table)` to answer per table. `rpc(fn, args)`
+// works the same way, with the function name in place of the table.
 export function createSupabaseMock(result = { data: [], error: null }, resolver) {
   const queries = {};
 
@@ -37,12 +38,14 @@ export function createSupabaseMock(result = { data: [], error: null }, resolver)
   };
 
   const query = makeQuery(null);
+  const from = (table) => {
+    if (!resolver) return query;
+    queries[table] ??= makeQuery(table);
+    return queries[table];
+  };
   const client = {
-    from: vi.fn((table) => {
-      if (!resolver) return query;
-      queries[table] ??= makeQuery(table);
-      return queries[table];
-    }),
+    from: vi.fn(from),
+    rpc: vi.fn((fn) => from(fn)),
   };
   return { client, query, queries };
 }

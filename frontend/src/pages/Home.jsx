@@ -5,9 +5,11 @@ import SongCard from "../components/SongCard";
 import LetterIndex from "../components/LetterIndex";
 import ConfirmSheet from "../components/ConfirmSheet";
 import SetlistPickerSheet from "../components/SetlistPickerSheet";
-import { deleteSong, listSongs } from "../api/songs";
+import EditorCodeSheet from "../components/EditorCodeSheet";
+import { deleteSong, isInvalidCodeError, listSongs } from "../api/songs";
 import { addSongToSetlist, listUpcomingSetlists, removeSongFromSetlist } from "../api/setlists";
 import { todayISO } from "../utils/dates";
+import { clearEditorCode, getEditorCode } from "../utils/editorCode";
 import { filterSongs, groupByLetter, plural, sortByTitle } from "../utils/text";
 import "../css/Home.css";
 
@@ -30,6 +32,9 @@ function Home() {
   const [query, setQuery] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  // Deleting needs the shared editor code; asked once, then remembered.
+  const [editorCode, setEditorCode] = useState(getEditorCode);
+  const [codeRequestSong, setCodeRequestSong] = useState(null);
   const [logoFailed, setLogoFailed] = useState(false);
   // Upcoming sub-lists: [{ id, date, setlist_songs: [{ song_id, position }] }]
   const [setlists, setSetlists] = useState([]);
@@ -89,6 +94,18 @@ function Home() {
   }, [setlists]);
 
   const cancelDelete = useCallback(() => setPendingDelete(null), []);
+  const cancelCodeRequest = useCallback(() => setCodeRequestSong(null), []);
+
+  const requestDelete = (song) => {
+    if (editorCode) setPendingDelete(song);
+    else setCodeRequestSong(song);
+  };
+
+  const acceptCode = (code) => {
+    setEditorCode(code);
+    setPendingDelete(codeRequestSong);
+    setCodeRequestSong(null);
+  };
   const closePicker = useCallback(() => setPickerSong(null), []);
 
   // Adds the song to (include = true) or removes it from a sub-list.
@@ -119,14 +136,20 @@ function Home() {
   const confirmDelete = async () => {
     const song = pendingDelete;
     setDeleting(true);
-    const { error } = await deleteSong(song.id);
+    const { error } = await deleteSong(song.id, editorCode);
     setDeleting(false);
     setPendingDelete(null);
 
     if (error) {
       console.error("Error deleting song:", error.message);
       setStatusMessage(null);
-      setErrorMessage("Cântarea nu a putut fi ștearsă. Încearcă din nou.");
+      if (isInvalidCodeError(error)) {
+        clearEditorCode();
+        setEditorCode(null);
+        setErrorMessage("Codul de editor s-a schimbat. Introdu-l din nou.");
+      } else {
+        setErrorMessage("Cântarea nu a putut fi ștearsă. Încearcă din nou.");
+      }
       return;
     }
     setErrorMessage(null);
@@ -213,7 +236,7 @@ function Home() {
                 key={song.id}
                 song={song}
                 plannedDates={plannedDates.get(song.id)}
-                onDelete={setPendingDelete}
+                onDelete={requestDelete}
                 onAddToSetlist={setPickerSong}
               />
             ))}
@@ -231,6 +254,10 @@ function Home() {
           onToggle={(setlist, include) => toggleSetlist(setlist, pickerSong, include)}
           onClose={closePicker}
         />
+      )}
+
+      {codeRequestSong && (
+        <EditorCodeSheet onValid={acceptCode} onClose={cancelCodeRequest} />
       )}
 
       {pendingDelete && (
