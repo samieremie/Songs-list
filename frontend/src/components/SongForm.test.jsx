@@ -4,31 +4,45 @@ import userEvent from "@testing-library/user-event";
 import SongForm from "./SongForm";
 
 describe("SongForm", () => {
-  it("submits title and music scale, then clears the fields", async () => {
+  it("submits trimmed title and music scale, then clears the fields", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     render(<SongForm onSubmit={onSubmit} />);
 
-    await user.type(screen.getByPlaceholderText("Titlu"), "Ce bine e");
-    await user.type(screen.getByPlaceholderText("Gama"), "Re major");
-    await user.click(screen.getByRole("button", { name: "Adaugă" }));
+    await user.type(screen.getByLabelText("Titlu"), "  Ce bine e ");
+    await user.type(screen.getByLabelText("Gama"), "Re major");
+    await user.click(screen.getByRole("button", { name: "Adaugă cântarea" }));
 
     expect(onSubmit).toHaveBeenCalledWith({
       title: "Ce bine e",
       musicScale: "Re major",
     });
-    expect(screen.getByPlaceholderText("Titlu")).toHaveValue("");
-    expect(screen.getByPlaceholderText("Gama")).toHaveValue("");
+    expect(screen.getByLabelText("Titlu")).toHaveValue("");
+    expect(screen.getByLabelText("Gama")).toHaveValue("");
   });
 
-  it("does not submit when a field is empty", async () => {
+  it("shows a Romanian message and does not submit when a field is empty", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     render(<SongForm onSubmit={onSubmit} />);
 
-    await user.type(screen.getByPlaceholderText("Titlu"), "Ce bine e");
-    await user.click(screen.getByRole("button", { name: "Adaugă" }));
+    await user.type(screen.getByLabelText("Titlu"), "Ce bine e");
+    await user.click(screen.getByRole("button", { name: "Adaugă cântarea" }));
 
     expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText("Scrie gama, de exemplu Re major.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Gama")).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("keeps the fields when saving fails", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(false);
+    render(<SongForm onSubmit={onSubmit} initialTitle="Aleluia" />);
+
+    await user.type(screen.getByLabelText("Gama"), "Sol");
+    await user.click(screen.getByRole("button", { name: "Adaugă cântarea" }));
+
+    expect(screen.getByLabelText("Titlu")).toHaveValue("Aleluia");
+    expect(screen.getByLabelText("Gama")).toHaveValue("Sol");
   });
 });

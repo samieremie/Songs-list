@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { createSupabaseMock } from "../test/supabaseMock";
 
 const mock = vi.hoisted(() => ({ current: null }));
@@ -11,11 +12,21 @@ vi.mock("../api/songsApi", () => ({
 import Home from "./Home";
 
 const songs = [
-  { id: 1, title: "Doamne, Tu esti", music_scale: "Re" },
+  { id: 1, title: "Doamne, Tu ești", music_scale: "Re" },
   { id: 2, title: "Aleluia", music_scale: "Sol" },
-  { id: 3, title: "Ce bine e", music_scale: "Do" },
-  { id: 4, title: "Al Tau sunt", music_scale: "La" },
+  { id: 3, title: "Cântă inima", music_scale: "Do" },
+  { id: 4, title: "Al Tău sunt", music_scale: "La" },
 ];
+
+const renderHome = () =>
+  render(
+    <MemoryRouter>
+      <Home />
+    </MemoryRouter>
+  );
+
+const titlesIn = (group) =>
+  [...group.querySelectorAll(".song-title")].map((el) => el.textContent);
 
 describe("Home", () => {
   beforeEach(() => {
@@ -23,36 +34,68 @@ describe("Home", () => {
   });
 
   it("lists songs grouped by first letter, sorted alphabetically", async () => {
-    render(<Home />);
+    renderHome();
 
     const headings = await screen.findAllByRole("heading", { level: 2 });
-    expect(headings.map((h) => h.textContent)).toEqual(["- A -", "- C -", "- D -"]);
-
-    const groupA = headings[0].closest(".song-group");
-    const titlesA = within(groupA)
-      .getAllByRole("heading", { level: 3 })
-      .map((h) => h.textContent);
-    expect(titlesA).toEqual(["Al Tau sunt", "Aleluia"]);
+    expect(headings.map((h) => h.textContent)).toEqual(["A", "C", "D"]);
+    expect(titlesIn(headings[0].closest("section"))).toEqual(["Al Tău sunt", "Aleluia"]);
   });
 
-  it("removes a song from the list after deleting it", async () => {
+  it("filters songs as you type, ignoring diacritics", async () => {
     const user = userEvent.setup();
-    render(<Home />);
+    renderHome();
     await screen.findByText("Aleluia");
 
+    await user.type(screen.getByRole("searchbox"), "canta");
+
+    expect(screen.getByText("Cântă inima")).toBeInTheDocument();
+    expect(screen.queryByText("Aleluia")).not.toBeInTheDocument();
+  });
+
+  it("offers to add a song when the search finds nothing", async () => {
+    const user = userEvent.setup();
+    renderHome();
+    await screen.findByText("Aleluia");
+
+    await user.type(screen.getByRole("searchbox"), "Osana");
+
+    expect(screen.getByText("Nicio cântare pentru „Osana”.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Adaug-o în listă" })).toBeInTheDocument();
+  });
+
+  it("asks for confirmation before deleting a song", async () => {
+    const user = userEvent.setup();
+    renderHome();
+    await user.click(await screen.findByRole("button", { name: /Aleluia/ }));
+    await user.click(screen.getByRole("button", { name: "Șterge" }));
+
+    const sheet = screen.getByRole("alertdialog", { name: "Ștergi „Aleluia”?" });
+    await user.click(within(sheet).getByRole("button", { name: "Renunță" }));
+
+    expect(mock.current.query.delete).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(screen.getByText("Aleluia")).toBeInTheDocument();
+  });
+
+  it("removes a song after the deletion is confirmed", async () => {
+    const user = userEvent.setup();
+    renderHome();
+    await user.click(await screen.findByRole("button", { name: /Aleluia/ }));
+    await user.click(screen.getByRole("button", { name: "Șterge" }));
+
     mock.current.query.result = { data: null, error: null };
-    const card = screen.getByText("Aleluia").closest(".song-card");
-    await user.click(within(card).getByRole("button", { name: "Șterge" }));
+    await user.click(screen.getByRole("button", { name: "Șterge cântarea" }));
 
     expect(mock.current.query.delete).toHaveBeenCalled();
     expect(mock.current.query.eq).toHaveBeenCalledWith("id", 2);
     expect(screen.queryByText("Aleluia")).not.toBeInTheDocument();
+    expect(screen.getByText("„Aleluia” a fost ștearsă.")).toBeInTheDocument();
   });
 
   it("shows a Romanian error message when songs cannot be loaded", async () => {
     mock.current = createSupabaseMock({ data: null, error: { message: "boom" } });
     vi.spyOn(console, "error").mockImplementation(() => {});
-    render(<Home />);
+    renderHome();
 
     expect(
       await screen.findByText("Nu s-au putut încărca cântările. Încearcă din nou.")

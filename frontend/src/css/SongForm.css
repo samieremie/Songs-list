@@ -1,48 +1,51 @@
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
+.song-form {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.field label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.field input {
   width: 100%;
+  height: 3.25rem;
+  padding: 0 1rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-size: 1.0625rem;
 }
 
-.title-input,
-.scale-input {
-  font-size: 1em;
+.field input::placeholder {
+  color: var(--text-muted);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--accent-ink);
+}
+
+.field input[aria-invalid="true"] {
+  border-color: var(--danger-ink);
+}
+
+.field-error {
+  color: var(--danger-ink);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.song-form-submit {
   width: 100%;
-  padding: 1em;
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
-  cursor: text;
-}
-
-.title-input:active,
-.scale-input:active {
-  transform: scale(0.95);
-}
-
-.title-input:focus,
-.scale-input:focus {
-  outline: 2px solid #242424;
-}
-
-.title-input:hover,
-.scale-input:hover {
-  box-shadow: 0 0 0 2.5px #2f303d, 0px 0px 25px -15px #000;
-}
-
-.add-btn {
-  font-size: 1em;
-  margin-top: 30px;
-  padding: 1em;
-  background-color: #646cff;
-  color: #f0f0f0;
-  border-radius: 12px;
-  border: none;
-}
-
-.add-btn:hover {
-  background-color: #535bf2;
-  cursor: pointer;
+  min-height: 3.25rem;
+  margin-top: 0.25rem;
+  font-size: 1.0625rem;
 }

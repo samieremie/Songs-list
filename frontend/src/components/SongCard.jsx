@@ -1,79 +1,93 @@
-import "../css/SongCard.css";
-import supabase from "../api/songsApi";
 import { useState } from "react";
+import { setLastSung } from "../api/songs";
+import { isRecent, sungAgo, todayISO } from "../utils/dates";
+import "../css/SongCard.css";
 
 function SongCard({ song, onDelete }) {
-  const [expanded, setExpanded] = useState(false); // track if card is expanded
-  const [lastSung, setLastSung] = useState(song.last_sung); // track locally
+  const [expanded, setExpanded] = useState(false);
+  const [lastSung, setLastSungState] = useState(song.last_sung ?? null);
+  // Remembers the date before "today" so a wrong tap can be undone.
+  const [previousSung, setPreviousSung] = useState(null);
+  const [saving, setSaving] = useState(false);
   const [updateError, setUpdateError] = useState(null);
+  const [justSung, setJustSung] = useState(false);
 
-  const toggleExpanded = () => {
-    setExpanded(!expanded);
-  };
+  const today = todayISO();
+  const sungToday = lastSung === today;
+  const detailsId = `song-${song.id}-details`;
 
-  const handleMarkAsSung = async () => {
-    const newDate = lastSung ? null : new Date().toISOString().split("T")[0]; // toggle
-
-    const { error } = await supabase
-      .from("songs")
-      .update({ last_sung: newDate })
-      .eq("id", song.id);
+  const saveDate = async (date, previous) => {
+    setSaving(true);
+    const { error } = await setLastSung(song.id, date);
+    setSaving(false);
 
     if (error) {
       console.error("Error updating last_sung:", error.message);
       setUpdateError("Nu s-a putut actualiza cântarea. Încearcă din nou.");
-    } else {
-      setUpdateError(null);
-      setLastSung(newDate); // update local state
-      // if (onUpdate) onUpdate(song.id, today); // optional parent callback
+      return;
     }
+    setUpdateError(null);
+    setPreviousSung(previous);
+    setLastSungState(date);
+    setJustSung(date === today);
   };
 
-  // Check if the song was sung less than a month ago
-  const isRecent =
-    lastSung &&
-    new Date(lastSung) > new Date(new Date() - 30 * 24 * 60 * 60 * 1000);
+  const handleMarkSung = () => saveDate(today, lastSung);
+  const handleUndo = () => saveDate(previousSung, null);
 
   return (
-    <div className={`song-card ${isRecent ? "recently-sung" : ""}`}>
-      {/* Always visible */}
-      <div className="song-header" onClick={toggleExpanded}>
-        <h3 className="song-title">{song.title}</h3>
-        <div
-          className="more-info"
-          onClick={(e) => {
-            e.stopPropagation(); // prevents double-triggering when clicking the button
-            toggleExpanded();
-          }}
-        >
-          {expanded ? "Ascunde" : "Mai multe"}
-          <span className={`arrow-icon ${expanded ? "open" : ""}`}>
-            <span className="left-bar"></span>
-            <span className="right-bar"></span>
-          </span>
-        </div>
-      </div>
+    <li className={`song-row${isRecent(lastSung) ? " is-recent" : ""}`}>
+      <button
+        type="button"
+        className="song-summary"
+        aria-expanded={expanded}
+        aria-controls={detailsId}
+        onClick={() => setExpanded((open) => !open)}
+      >
+        <span className="song-text">
+          <span className="song-title">{song.title}</span>
+          {lastSung && (
+            <span className={`song-sung${justSung ? " pop" : ""}`}>
+              Cântată {sungAgo(lastSung)}
+            </span>
+          )}
+        </span>
+        <span className="song-key">
+          <span className="visually-hidden">Gama </span>
+          {song.music_scale}
+        </span>
+      </button>
 
-      {/* Conditionally rendered */}
-
-      <div className={`song-details ${expanded ? "show" : ""}`}>
-        <p className="music-scale">
-          <strong>Gama:</strong> {song.music_scale}
-        </p>
-        <div className="buttons">
-          <button className="delete-btn" onClick={() => onDelete(song.id)}>
-            Șterge
+      <div id={detailsId} className="song-actions" hidden={!expanded}>
+        {sungToday ? (
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={handleUndo}
+            disabled={saving}
+          >
+            Anulează „cântată azi”
           </button>
-          <div className="right-btns">
-            {/* <button className="update-btn">Modifică</button> */}
-            <button className="mark-as-sung-btn" onClick={handleMarkAsSung}>
-              Cântat
-            </button>
-          </div>
-        </div>
-        {updateError && <p className="error-message">{updateError}</p>}
+        ) : (
+          <button
+            type="button"
+            className="btn btn-palm"
+            onClick={handleMarkSung}
+            disabled={saving}
+          >
+            Marchează cântată azi
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn btn-text-danger"
+          onClick={() => onDelete(song)}
+        >
+          Șterge
+        </button>
+        {updateError && <p className="error-message song-error">{updateError}</p>}
       </div>
-    </div>
+    </li>
   );
 }
 

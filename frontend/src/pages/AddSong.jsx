@@ -1,31 +1,36 @@
-import SongForm from "../components/SongForm";
-import supabase from "../api/songsApi";
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import SongForm from "../components/SongForm";
+import { addSong } from "../api/songs";
 import "../css/AddSong.css";
 
 function AddSong() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [addError, setAddError] = useState(null);
 
   async function handleAddSong({ title, musicScale }) {
-    const { error } = await supabase
-      .from("songs")
-      .insert([{ title: title, music_scale: musicScale }]);
+    const { error } = await addSong({ title, musicScale });
     if (error) {
       console.error("Error adding song:", error.message);
       setAddError("Cântarea nu a putut fi adăugată. Încearcă din nou.");
-    } else {
-      navigate("/");
+      return false;
     }
+    navigate("/", { state: { added: title } });
+    return true;
   }
 
   return (
-    <div className="add-song-card">
-      <h1 className="addsong-heading">Adaugă o cântare</h1>
-      <SongForm onSubmit={handleAddSong} />
-      {addError && <p className="error-message">{addError}</p>}
-    </div>
+    <section className="add-page">
+      <h1 className="page-title">Adaugă o cântare</h1>
+      <p className="page-lede">Apare imediat în lista tuturor.</p>
+      <SongForm onSubmit={handleAddSong} initialTitle={location.state?.title ?? ""} />
+      {addError && (
+        <p className="error-message add-error" role="alert">
+          {addError}
+        </p>
+      )}
+    </section>
   );
 }
 

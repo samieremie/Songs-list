@@ -1,33 +1,181 @@
+/* Elim oasis palette. Tile colors stay the same in both themes. */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  font-weight: 400;
+  --night: #1e1b5e;
+  --spring: #00a6a6;
+  --sun: #ffc23d;
+  --hibiscus: #ff4f7b;
+  --palm: #2fbf71;
+  --paper: #f3f6ff;
+
+  --bg: var(--paper);
+  --surface: #ffffff;
+  --text: var(--night);
+  --text-muted: #56548a;
+  --line: #dce2f5;
+  --accent-ink: #007575;
+  --palm-ink: #167a45;
+  --danger-ink: #c2224d;
+  --danger-bg: #ffe8ee;
+  --success-bg: #e2f7ea;
+  --scrim: rgba(22, 19, 74, 0.55);
+
+  --font-display: "Unbounded", "Rubik", system-ui, sans-serif;
+  --font-body: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --column: 40rem;
+  --tab-h: 4.5rem;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #f0f0f0;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-* {
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16134a;
+    --surface: #211e62;
+    --text: var(--paper);
+    --text-muted: #b4b6e4;
+    --line: #34307a;
+    --accent-ink: #3ed8d2;
+    --palm-ink: #5ee39a;
+    --danger-ink: #ff8fa9;
+    --danger-bg: #3a1e5c;
+    --success-bg: #183f5a;
+    --scrim: rgba(6, 5, 30, 0.7);
+  }
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+html {
+  -webkit-text-size-adjust: 100%;
 }
-a:hover {
-  color: #535bf2;
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--accent-ink);
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Buttons shared across pages */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0 1.25rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.btn-sun {
+  background: var(--sun);
+  color: var(--night);
+}
+
+.btn-palm {
+  background: var(--palm);
+  color: var(--night);
+}
+
+.btn-hibiscus {
+  background: var(--hibiscus);
+  color: var(--night);
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.btn-text-danger {
+  background: transparent;
+  color: var(--danger-ink);
+  padding: 0 0.75rem;
+}
+
+/* Messages */
+.error-message,
+.status-message {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
 }
 
 .error-message {
-  color: #c62828;
-  font-weight: 500;
-  text-align: center;
-  margin: 1rem 0;
+  background: var(--danger-bg);
+  color: var(--danger-ink);
+}
+
+.status-message {
+  background: var(--success-bg);
+  color: var(--palm-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

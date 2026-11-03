@@ -1,19 +1,127 @@
-.page-title {
-  color: #242424;
+.home-header {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: grid;
+  gap: 1rem;
+  padding: calc(1.25rem + env(safe-area-inset-top, 0px)) 0 0.85rem;
+  background: var(--bg);
 }
 
-.letter-heading {
-  color: #242424;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-@media screen and (max-width: 768px) {
-  .page-title {
-    font-size: 2em;
+/* The circle lives on a wrapper: rounding the <img> itself would clip
+   the logo text in its corners. */
+.brand-badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  background: var(--night);
+}
+
+.brand-logo {
+  width: 2.3rem;
+  height: 2.3rem;
+  object-fit: contain;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-badge {
+    background: var(--surface);
   }
 }
 
-@media screen and (min-width: 768px) {
-  .page-title {
-    font-size: 3em;
+.home-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.home-church {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.home-message {
+  margin-top: 0.75rem;
+}
+
+.home-note {
+  margin-top: 2rem;
+  color: var(--text-muted);
+}
+
+.home-empty {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  font-size: 1.125rem;
+}
+
+/* Letter groups: the tiles are the one loud element on the page. */
+.letter-group {
+  margin-top: 1.75rem;
+  scroll-margin-top: 9.5rem;
+}
+
+.letter-tile {
+  display: inline-grid;
+  place-items: center;
+  min-width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 0 0.6rem 0.2rem;
+  padding: 0 0.65rem;
+  border-radius: var(--radius-md);
+  color: var(--night);
+  font-family: var(--font-display);
+  font-size: 1.875rem;
+  font-weight: 800;
+  line-height: 1;
+  transform: rotate(-4deg);
+}
+
+.letter-group:nth-of-type(even) .letter-tile {
+  transform: rotate(3deg);
+}
+
+.tile-sun {
+  background: var(--sun);
+}
+
+.tile-hibiscus {
+  background: var(--hibiscus);
+}
+
+.tile-palm {
+  background: var(--palm);
+}
+
+.tile-spring {
+  background: var(--spring);
+}
+
+.song-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+/* Leave room for the A-Z strip when it would overlap the list. */
+@media (max-width: 46rem) {
+  .has-index .letter-group {
+    margin-right: 1.6rem;
   }
 }

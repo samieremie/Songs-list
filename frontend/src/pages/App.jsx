@@ -2,18 +2,18 @@ import "../css/App.css";
 import { Routes, Route } from "react-router-dom";
 import Home from "./Home";
 import AddSong from "./AddSong";
-import NavBar from "../components/NavBar";
+import TabBar from "../components/TabBar";
 
 function App() {
   return (
     <>
-      <NavBar />
-      <main className="main-content">
+      <main className="app">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/addsong" element={<AddSong />} />
         </Routes>
       </main>
+      <TabBar />
     </>
   );
 }

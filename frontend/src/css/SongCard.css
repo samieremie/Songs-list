@@ -1,144 +1,97 @@
-.song-card {
-  background-color: #fff;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  color: #242424;
-  justify-content: space-between;
-  padding: 1em;
-  margin: 25px 0;
-  height: fit-content;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+.song-row + .song-row {
+  border-top: 1px solid var(--line);
 }
 
-.song-header {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  height: fit-content;
+.song-summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: 3.75rem;
+  padding: 0.7rem 1rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
   cursor: pointer;
 }
 
-.more-info {
-  padding: 1em;
-  border: none;
-  color: #646cff;
-  font-weight: 700;
+.song-summary:focus-visible {
+  outline-offset: -3px;
+  border-radius: var(--radius-md);
 }
 
-.arrow-icon {
-  display: inline-block;
-  position: relative;
-  width: 20px;
-  height: 20px;
-  margin-left: 8px;
-  vertical-align: middle;
-  transition: transform 0.5s cubic-bezier(0.25, 1.7, 0.35, 0.8);
-}
-
-/* The two bars forming the arrow */
-.arrow-icon .left-bar,
-.arrow-icon .right-bar {
-  position: absolute;
-  top: 8px;
-  width: 10px;
-  height: 2px;
-  background: #646cff;
-  border-radius: 2px;
-  transition: transform 0.5s cubic-bezier(0.25, 1.7, 0.35, 0.8);
-}
-
-/* Default (arrow pointing down) */
-.arrow-icon .left-bar {
-  left: 1px;
-  transform: rotate(35deg);
-}
-.arrow-icon .right-bar {
-  right: 1px;
-  transform: rotate(-35deg);
-}
-
-/* When open (arrow pointing up) */
-.arrow-icon.open .left-bar {
-  transform: rotate(-35deg);
-}
-.arrow-icon.open .right-bar {
-  transform: rotate(35deg);
-}
-
-.song-details {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition: max-height 0.4s ease,
-    /* smooth, same speed for both directions */ opacity 0.4s ease;
-}
-
-.song-details.show {
-  max-height: 600px; /* adjust to fit your content */
-  opacity: 1;
+.song-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .song-title {
-  font-size: 1em;
-  font-weight: 800;
+  font-size: 1.1875rem;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
-.music-scale {
-  font-size: 0.9em;
+.song-sung {
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
-.buttons {
+.is-recent .song-sung {
+  color: var(--palm-ink);
+  font-weight: 500;
+}
+
+.is-recent .song-sung::before {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: var(--palm);
+  vertical-align: 0.05em;
+}
+
+.song-sung.pop {
+  animation: sung-pop 380ms cubic-bezier(0.3, 1.6, 0.5, 1);
+  transform-origin: left center;
+}
+
+@keyframes sung-pop {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+}
+
+.song-key {
+  min-width: 4.75rem;
+  padding: 0.3rem 0.6rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.song-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
-  gap: 15px;
+  gap: 0.5rem;
+  padding: 0 1rem 1rem;
 }
 
-.mark-as-sung-btn,
-.delete-btn,
-.update-btn {
-  width: fit-content;
-  height: fit-content;
-  padding: 1em;
-  border-radius: 12px;
-  border: none;
+.song-actions[hidden] {
+  display: none;
 }
 
-.mark-as-sung-btn {
-  background-color: #646cff;
-  color: #f0f0f0;
-}
-
-.mark-as-sung-btn:hover {
-  cursor: pointer;
-  background-color: #535bf2;
-  color: #f0f0f0;
-}
-
-.delete-btn:hover {
-  cursor: pointer;
-  background-color: rgb(211, 35, 35);
-  color: #f0f0f0;
-}
-
-.update-btn {
-  background-color: #5e5e5e;
-  color: #f0f0f0;
-}
-
-.update-btn:hover {
-  cursor: pointer;
-  background-color: #242424;
-  color: #f0f0f0;
-}
-
-.right-btns {
-  display: flex;
-  gap: 15px;
-}
-
-.song-card.recently-sung {
-  border: 2px solid #ad4d4d;
-  background-color: #ffe6e6;
+.song-error {
+  flex-basis: 100%;
 }

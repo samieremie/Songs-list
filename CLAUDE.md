@@ -15,16 +15,27 @@ Songs-list ("Lista de cântări tineret Elim Bruxelles") is a web app for the El
 |---|---|
 | `main.jsx` | Entry point |
 | `pages/` | Route pages: `App.jsx` (router + layout), `Home.jsx` (`/`), `AddSong.jsx` (`/addsong`) |
-| `components/` | `NavBar`, `SongCard`, `SongForm`, `SearchBar` (not wired up yet) |
-| `api/` | Supabase client and data-access helpers |
+| `components/` | `TabBar` (bottom navigation), `SearchBar`, `SongCard` (one song row), `LetterIndex` (A–Z jump strip), `ConfirmSheet` (bottom-sheet confirmation), `SongForm` |
+| `api/` | `songsApi.js` (Supabase client) and `songs.js` (all queries on `songs`) |
+| `utils/` | `text.js` (diacritic-insensitive search, sorting, grouping, Romanian `plural`), `dates.js` (`sungAgo`, `isRecent`, `todayISO`) |
 | `css/` | One plain CSS file per component/page |
 | `test/` | Vitest setup and the shared Supabase mock |
 | `../public/_redirects` | Netlify SPA fallback (`/* /index.html 200`). Keep it, or direct links to routes return 404. |
 
+### Design system ("Elim oasis")
+
+- Tokens live on `:root` in `src/css/index.css`, with a dark-mode override under `prefers-color-scheme: dark`. Always use the variables, never raw hex values in component CSS.
+- Palette: `--night` #1E1B5E, `--spring` #00A6A6, `--sun` #FFC23D, `--hibiscus` #FF4F7B, `--palm` #2FBF71, `--paper` #F3F6FF. Text on these bright fills is always `--night`; use the `*-ink` tokens for colored text.
+- Fonts: **Unbounded 800** only for page titles and the letter tiles; **Rubik** for everything else.
+- The rotated, colored letter tiles are the one loud element. Keep everything else calm.
+- Phone first: touch targets of at least 48px, a bottom tab bar, the key always visible on every row, motion only in response to user actions, and `prefers-reduced-motion` respected.
+- Shared button classes: `.btn` + `.btn-sun` (primary), `.btn-palm` (mark as sung), `.btn-hibiscus` (destructive confirm), `.btn-outline`, `.btn-text-danger`.
+- The logo is `public/logo.png` (white line art on a transparent background), always shown on an indigo circle so it stays visible in light mode. It's hidden if the file fails to load. The browser tab icon (`public/favicon.png`) and the iPhone home-screen icon (`public/apple-touch-icon.png`) are the same logo on indigo. Don't hotlink the church website: it blocks requests from other sites.
+
 ### Supabase data model
 
 - `songs`: `id`, `title`, `music_scale`, `last_sung` (date `YYYY-MM-DD`, or null).
-- A song counts as "recently sung" (`.recently-sung` highlight) if `last_sung` is within the last 30 days. The "Cântat" button toggles `last_sung` between today's date and null.
+- A song counts as "recently sung" (`.is-recent`) if `last_sung` is within the last 30 days. "Marchează cântată azi" sets `last_sung` to today; "Anulează" restores the previous date.
 - **No authentication.** Anyone with the link can add, delete and update songs. Don't assume RLS restricts anything.
 
 ## Build, test & lint
@@ -79,8 +90,7 @@ npm run preview      # Serve the built dist/
    - Automatic cleanup: a Supabase `pg_cron` job runs daily and executes `delete from setlists where date < current_date`.
    - The frontend also hides setlists with past dates, in case the job hasn't run yet.
 2. **Audio per song.** Likely stored in Supabase Storage and linked from `songs`.
-3. **Search.** `SearchBar` exists, but it is commented out in `Home.jsx` and has no filtering logic.
-4. **Edit a song.** The "Modifică" button exists, but it is commented out in `SongCard.jsx`.
+3. **Edit a song.** There is no edit UI yet.
 
 ## Workflow & git
 

@@ -1,0 +1,36 @@
+.letter-index {
+  position: fixed;
+  z-index: 10;
+  top: 55%;
+  right: max(0.15rem, calc((100vw - var(--column)) / 2 - 2.5rem));
+  transform: translateY(-50%);
+  max-height: calc(100dvh - 18rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.letter-index ul {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.letter-index button {
+  display: block;
+  width: 1.9rem;
+  min-height: 1.6rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.letter-index button:active {
+  background: var(--sun);
+  color: var(--night);
+}

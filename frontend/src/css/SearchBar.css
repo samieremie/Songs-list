@@ -1,51 +1,57 @@
-.group {
-  display: flex;
-  line-height: 28px;
-  align-items: center;
+.search {
   position: relative;
-  min-width: 300px;
-}
-
-.input {
-  font-family: "Montserrat", sans-serif;
-  font-size: 1em;
-  width: 100%;
-  height: 50px;
-  padding-left: 2.5rem;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  border: 0;
-  border-radius: 12px;
-  background-color: #fff;
-  outline: none;
-  color: #242424;
-  transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1);
-  cursor: text;
-  z-index: 0;
-}
-
-.input::placeholder {
-  color: #242424;
-}
-
-.input:hover {
-  box-shadow: 0 0 0 2.5px #2f303d, 0px 0px 25px -15px #000;
-}
-
-.input:active {
-  transform: scale(0.95);
-}
-
-.input:focus {
-  outline: 2px solid #242424;
-  box-shadow: 0 0 0 2.5px #2f303d;
+  display: flex;
+  align-items: center;
 }
 
 .search-icon {
   position: absolute;
   left: 1rem;
-  fill: #242424;
-  width: 1rem;
-  height: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: var(--text-muted);
   pointer-events: none;
-  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  height: 3.25rem;
+  padding: 0 3rem 0 2.9rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-size: 1.0625rem;
+  appearance: none;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-ink);
+}
+
+.search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.35rem;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.search-clear svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: var(--text-muted);
 }

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createSupabaseMock } from "../test/supabaseMock";
+import { todayISO } from "../utils/dates";
 
 const mock = vi.hoisted(() => ({ current: null }));
 vi.mock("../api/songsApi", () => ({
@@ -10,65 +11,81 @@ vi.mock("../api/songsApi", () => ({
 
 import SongCard from "./SongCard";
 
-const today = () => new Date().toISOString().split("T")[0];
+function renderCard(song, onDelete = vi.fn()) {
+  const utils = render(
+    <ul>
+      <SongCard song={song} onDelete={onDelete} />
+    </ul>
+  );
+  return { ...utils, row: utils.container.querySelector(".song-row"), onDelete };
+}
+
+const openRow = (user, title) =>
+  user.click(screen.getByRole("button", { name: new RegExp(title) }));
 
 describe("SongCard", () => {
   beforeEach(() => {
     mock.current = createSupabaseMock({ data: null, error: null });
   });
 
-  it("shows the title and music scale", () => {
-    const { container } = render(
-      <SongCard song={{ id: 1, title: "Ce bine e", music_scale: "Re" }} onDelete={vi.fn()} />
-    );
+  it("shows the title and the key without opening the row", () => {
+    renderCard({ id: 1, title: "Ce bine e", music_scale: "Re" });
+
     expect(screen.getByText("Ce bine e")).toBeInTheDocument();
-    expect(container.querySelector(".music-scale")).toHaveTextContent("Gama: Re");
+    expect(screen.getByText("Re")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Șterge" })).not.toBeInTheDocument();
   });
 
-  it("calls onDelete with the song id", async () => {
-    const user = userEvent.setup();
-    const onDelete = vi.fn();
-    render(<SongCard song={{ id: 7, title: "A", music_scale: "Do" }} onDelete={onDelete} />);
+  it("shows when the song was last sung", () => {
+    renderCard({ id: 1, title: "A", music_scale: "Do", last_sung: todayISO() });
+    expect(screen.getByText("Cântată azi")).toBeInTheDocument();
+  });
 
+  it("asks the parent to delete the song", async () => {
+    const user = userEvent.setup();
+    const song = { id: 7, title: "Aleluia", music_scale: "Do" };
+    const { onDelete } = renderCard(song);
+
+    await openRow(user, "Aleluia");
     await user.click(screen.getByRole("button", { name: "Șterge" }));
 
-    expect(onDelete).toHaveBeenCalledWith(7);
+    expect(onDelete).toHaveBeenCalledWith(song);
   });
 
   it("marks a song as sung today and highlights it", async () => {
     const user = userEvent.setup();
-    const { container } = render(
-      <SongCard song={{ id: 3, title: "A", music_scale: "Do", last_sung: null }} onDelete={vi.fn()} />
-    );
+    const { row } = renderCard({ id: 3, title: "Aleluia", music_scale: "Do", last_sung: null });
 
-    await user.click(screen.getByRole("button", { name: "Cântat" }));
+    await openRow(user, "Aleluia");
+    await user.click(screen.getByRole("button", { name: "Marchează cântată azi" }));
 
     expect(mock.current.client.from).toHaveBeenCalledWith("songs");
-    expect(mock.current.query.update).toHaveBeenCalledWith({ last_sung: today() });
+    expect(mock.current.query.update).toHaveBeenCalledWith({ last_sung: todayISO() });
     expect(mock.current.query.eq).toHaveBeenCalledWith("id", 3);
-    expect(container.querySelector(".song-card")).toHaveClass("recently-sung");
+    expect(row).toHaveClass("is-recent");
+    expect(screen.getByText("Cântată azi")).toBeInTheDocument();
   });
 
-  it("clears last_sung when clicked on a recently sung song", async () => {
+  it("undo restores the previous date", async () => {
     const user = userEvent.setup();
-    const { container } = render(
-      <SongCard song={{ id: 3, title: "A", music_scale: "Do", last_sung: today() }} onDelete={vi.fn()} />
-    );
-    expect(container.querySelector(".song-card")).toHaveClass("recently-sung");
+    renderCard({ id: 3, title: "Aleluia", music_scale: "Do", last_sung: "2020-01-05" });
 
-    await user.click(screen.getByRole("button", { name: "Cântat" }));
+    await openRow(user, "Aleluia");
+    await user.click(screen.getByRole("button", { name: "Marchează cântată azi" }));
+    await user.click(screen.getByRole("button", { name: "Anulează „cântată azi”" }));
 
-    expect(mock.current.query.update).toHaveBeenCalledWith({ last_sung: null });
-    expect(container.querySelector(".song-card")).not.toHaveClass("recently-sung");
+    expect(mock.current.query.update).toHaveBeenLastCalledWith({ last_sung: "2020-01-05" });
+    expect(screen.queryByText("Cântată azi")).not.toBeInTheDocument();
   });
 
   it("shows a Romanian error message when the update fails", async () => {
     const user = userEvent.setup();
     mock.current = createSupabaseMock({ data: null, error: { message: "boom" } });
     vi.spyOn(console, "error").mockImplementation(() => {});
-    render(<SongCard song={{ id: 3, title: "A", music_scale: "Do" }} onDelete={vi.fn()} />);
+    renderCard({ id: 3, title: "Aleluia", music_scale: "Do" });
 
-    await user.click(screen.getByRole("button", { name: "Cântat" }));
+    await openRow(user, "Aleluia");
+    await user.click(screen.getByRole("button", { name: "Marchează cântată azi" }));
 
     expect(
       screen.getByText("Nu s-a putut actualiza cântarea. Încearcă din nou.")
