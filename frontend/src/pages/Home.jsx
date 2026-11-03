@@ -4,7 +4,10 @@ import SearchBar from "../components/SearchBar";
 import SongCard from "../components/SongCard";
 import LetterIndex from "../components/LetterIndex";
 import ConfirmSheet from "../components/ConfirmSheet";
+import SetlistPickerSheet from "../components/SetlistPickerSheet";
 import { deleteSong, listSongs } from "../api/songs";
+import { addSongToSetlist, listUpcomingSetlists, removeSongFromSetlist } from "../api/setlists";
+import { todayISO } from "../utils/dates";
 import { filterSongs, groupByLetter, plural, sortByTitle } from "../utils/text";
 import "../css/Home.css";
 
@@ -28,6 +31,10 @@ function Home() {
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [logoFailed, setLogoFailed] = useState(false);
+  // Upcoming sub-lists: [{ id, date, setlist_songs: [{ song_id, position }] }]
+  const [setlists, setSetlists] = useState([]);
+  const [setlistsError, setSetlistsError] = useState(null);
+  const [pickerSong, setPickerSong] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,7 +54,19 @@ function Home() {
       setLoading(false);
     };
 
+    const fetchSetlists = async () => {
+      const { data, error } = await listUpcomingSetlists(todayISO());
+      if (cancelled) return;
+      if (error) {
+        console.error("Error fetching setlists:", error.message);
+        setSetlistsError("Sub-listele nu s-au putut încărca. Încearcă din nou.");
+      } else {
+        setSetlists(data ?? []);
+      }
+    };
+
     fetchSongs();
+    fetchSetlists();
     return () => {
       cancelled = true;
     };
@@ -58,7 +77,44 @@ function Home() {
     [songs, query]
   );
 
+  // song id -> dates of the upcoming sub-lists it is in
+  const plannedDates = useMemo(() => {
+    const map = new Map();
+    for (const setlist of setlists) {
+      for (const row of setlist.setlist_songs ?? []) {
+        map.set(row.song_id, [...(map.get(row.song_id) ?? []), setlist.date]);
+      }
+    }
+    return map;
+  }, [setlists]);
+
   const cancelDelete = useCallback(() => setPendingDelete(null), []);
+  const closePicker = useCallback(() => setPickerSong(null), []);
+
+  // Adds the song to (include = true) or removes it from a sub-list.
+  const toggleSetlist = async (setlist, song, include) => {
+    const rows = setlist.setlist_songs ?? [];
+    let error;
+    let nextRows;
+
+    if (include) {
+      const position = rows.reduce((max, r) => Math.max(max, r.position ?? 0), -1) + 1;
+      ({ error } = await addSongToSetlist(setlist.id, song.id, position));
+      nextRows = [...rows, { song_id: song.id, position }];
+    } else {
+      ({ error } = await removeSongFromSetlist(setlist.id, song.id));
+      nextRows = rows.filter((r) => r.song_id !== song.id);
+    }
+
+    if (error) {
+      console.error("Error updating setlist:", error.message);
+      return false;
+    }
+    setSetlists((prev) =>
+      prev.map((s) => (s.id === setlist.id ? { ...s, setlist_songs: nextRows } : s))
+    );
+    return true;
+  };
 
   const confirmDelete = async () => {
     const song = pendingDelete;
@@ -153,13 +209,29 @@ function Home() {
           </h2>
           <ul className="song-list">
             {letterSongs.map((song) => (
-              <SongCard key={song.id} song={song} onDelete={setPendingDelete} />
+              <SongCard
+                key={song.id}
+                song={song}
+                plannedDates={plannedDates.get(song.id)}
+                onDelete={setPendingDelete}
+                onAddToSetlist={setPickerSong}
+              />
             ))}
           </ul>
         </section>
       ))}
 
       {showIndex && <LetterIndex letters={groups.map(([l]) => l)} onJump={jumpTo} />}
+
+      {pickerSong && (
+        <SetlistPickerSheet
+          song={pickerSong}
+          setlists={setlists}
+          error={setlistsError}
+          onToggle={(setlist, include) => toggleSetlist(setlist, pickerSong, include)}
+          onClose={closePicker}
+        />
+      )}
 
       {pendingDelete && (
         <ConfirmSheet

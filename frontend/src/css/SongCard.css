@@ -40,6 +40,13 @@
   font-size: 0.875rem;
 }
 
+.song-planned {
+  margin-top: 0.15rem;
+  color: var(--accent-ink);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
 .is-recent .song-sung {
   color: var(--palm-ink);
   font-weight: 500;
@@ -83,9 +90,12 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 0.5rem;
   padding: 0 1rem 1rem;
+}
+
+.song-actions .btn-text-danger {
+  margin-left: auto;
 }
 
 .song-actions[hidden] {

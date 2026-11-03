@@ -101,4 +101,31 @@ describe("Home", () => {
       await screen.findByText("Nu s-au putut încărca cântările. Încearcă din nou.")
     ).toBeInTheDocument();
   });
+
+  it("adds a song to an upcoming sub-list and shows it on the row", async () => {
+    const user = userEvent.setup();
+    const results = {
+      songs: { data: songs, error: null },
+      setlists: {
+        data: [{ id: 7, date: "2099-01-05", setlist_songs: [{ song_id: 1, position: 0 }] }],
+        error: null,
+      },
+      setlist_songs: { data: null, error: null },
+    };
+    mock.current = createSupabaseMock(undefined, (table) => results[table]);
+    renderHome();
+
+    expect(await screen.findByText("În sub-lista din 5 ianuarie")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Aleluia/ }));
+    await user.click(screen.getByRole("button", { name: "Adaugă în sub-listă" }));
+    const sheet = screen.getByRole("dialog", { name: "Adaugă „Aleluia” în sub-listă" });
+    await user.click(within(sheet).getByRole("checkbox", { name: /5 ianuarie/ }));
+
+    expect(mock.current.queries.setlist_songs.insert).toHaveBeenCalledWith([
+      { setlist_id: 7, song_id: 2, position: 1 },
+    ]);
+    await user.click(within(sheet).getByRole("button", { name: "Gata" }));
+    expect(screen.getAllByText("În sub-lista din 5 ianuarie")).toHaveLength(2);
+  });
 });

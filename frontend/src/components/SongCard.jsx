@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { setLastSung } from "../api/songs";
-import { isRecent, sungAgo, todayISO } from "../utils/dates";
+import { formatDayMonth, isRecent, sungAgo, todayISO } from "../utils/dates";
 import "../css/SongCard.css";
 
-function SongCard({ song, onDelete }) {
+function SongCard({ song, plannedDates = [], onDelete, onAddToSetlist }) {
   const [expanded, setExpanded] = useState(false);
   const [lastSung, setLastSungState] = useState(song.last_sung ?? null);
   // Remembers the date before "today" so a wrong tap can be undone.
@@ -51,6 +51,12 @@ function SongCard({ song, onDelete }) {
               Cântată {sungAgo(lastSung)}
             </span>
           )}
+          {plannedDates.length > 0 && (
+            <span className="song-planned">
+              {plannedDates.length === 1 ? "În sub-lista din " : "În sub-listele din "}
+              {plannedDates.map(formatDayMonth).join(", ")}
+            </span>
+          )}
         </span>
         <span className="song-key">
           <span className="visually-hidden">Gama </span>
@@ -78,6 +84,13 @@ function SongCard({ song, onDelete }) {
             Marchează cântată azi
           </button>
         )}
+        <button
+          type="button"
+          className="btn btn-outline"
+          onClick={() => onAddToSetlist(song)}
+        >
+          Adaugă în sub-listă
+        </button>
         <button
           type="button"
           className="btn btn-text-danger"
