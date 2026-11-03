@@ -23,6 +23,56 @@ export function isRecent(isoDate, now = new Date()) {
   return days >= 0 && days < 30;
 }
 
+function parseISO(isoDate) {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+const capitalize = (text) => text.charAt(0).toLocaleUpperCase("ro") + text.slice(1);
+
+// "Luni, 9 noiembrie"
+export function formatServiceDate(isoDate) {
+  const text = new Intl.DateTimeFormat("ro-RO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(parseISO(isoDate));
+  return capitalize(text);
+}
+
+// "Luni"
+export function formatWeekday(isoDate) {
+  return capitalize(
+    new Intl.DateTimeFormat("ro-RO", { weekday: "long" }).format(parseISO(isoDate))
+  );
+}
+
+// "9 noiembrie"
+export function formatDayMonth(isoDate) {
+  return new Intl.DateTimeFormat("ro-RO", { day: "numeric", month: "long" }).format(
+    parseISO(isoDate)
+  );
+}
+
+export function daysUntil(isoDate, now = new Date()) {
+  return -daysSince(isoDate, now);
+}
+
+// "azi", "mâine", "în 6 zile", "în 20 de zile"
+export function untilLabel(isoDate, now = new Date()) {
+  const days = daysUntil(isoDate, now);
+  if (days <= 0) return "azi";
+  if (days === 1) return "mâine";
+  return `în ${count(days, "o zi", "zile")}`;
+}
+
+// The next given weekday (0 = Sunday, 1 = Monday...), today included.
+export function nextWeekday(weekday, now = new Date()) {
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  date.setDate(date.getDate() + ((weekday - date.getDay() + 7) % 7));
+  return todayISO(date);
+}
+
 // "azi", "ieri", "acum 5 zile", "acum o săptămână", "acum 3 luni"...
 export function sungAgo(isoDate, now = new Date()) {
   const days = daysSince(isoDate, now);

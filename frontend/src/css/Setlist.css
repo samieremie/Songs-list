@@ -1,0 +1,167 @@
+.setlist-page {
+  padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 3rem;
+  margin-left: -0.4rem;
+  padding: 0 0.4rem;
+  color: var(--accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back-link svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: currentColor;
+}
+
+/* The date is this page's one loud element: the weekday as a tilted tile,
+   echoing the letter tiles of the main list. */
+.setlist-header {
+  margin-top: 0.75rem;
+}
+
+.setlist-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.setlist-weekday {
+  display: inline-block;
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius-md);
+  background: var(--sun);
+  color: var(--night);
+  font-size: 1.75rem;
+  transform: rotate(-3deg);
+}
+
+.setlist-daymonth {
+  font-size: 1.75rem;
+}
+
+.setlist-summary {
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+}
+
+.setlist-message {
+  margin-top: 1rem;
+}
+
+.setlist-note {
+  margin-top: 2rem;
+  color: var(--text-muted);
+}
+
+.setlist-songs {
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.setlist-row {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr auto;
+  grid-template-areas:
+    "num title key"
+    "num tools tools";
+  align-items: center;
+  column-gap: 0.75rem;
+  row-gap: 0.35rem;
+  padding: 0.8rem 1rem 0.5rem 0.75rem;
+}
+
+.setlist-row + .setlist-row {
+  border-top: 1px solid var(--line);
+}
+
+/* Singing order: the number really is a sequence here. */
+.setlist-number {
+  grid-area: num;
+  align-self: start;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--bg);
+  font-weight: 600;
+}
+
+.setlist-song-title {
+  grid-area: title;
+  min-width: 0;
+}
+
+.setlist-row .song-key {
+  grid-area: key;
+}
+
+.setlist-tools {
+  grid-area: tools;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: -0.5rem;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.icon-btn svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: currentColor;
+}
+
+.icon-btn:disabled {
+  color: var(--line);
+  cursor: default;
+}
+
+.setlist-remove {
+  margin-left: auto;
+}
+
+.setlist-actions {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.setlist-actions .btn-sun {
+  min-height: 3.25rem;
+  font-size: 1.0625rem;
+}
+
+.setlist-missing {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+  margin-top: 2rem;
+  font-size: 1.125rem;
+}

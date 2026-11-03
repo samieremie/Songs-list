@@ -1,0 +1,113 @@
+.setlists-page {
+  padding-top: calc(1.75rem + env(safe-area-inset-top, 0px));
+}
+
+.setlist-create {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 1.5rem;
+}
+
+.setlist-create label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.setlist-create-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+}
+
+.setlist-create input {
+  width: 100%;
+  min-width: 0;
+  height: 3.25rem;
+  padding: 0 1rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-size: 1.0625rem;
+}
+
+.setlist-create input:focus {
+  outline: none;
+  border-color: var(--accent-ink);
+}
+
+.setlist-create input[aria-invalid="true"] {
+  border-color: var(--danger-ink);
+}
+
+.setlist-create .btn {
+  min-height: 3.25rem;
+}
+
+@media (max-width: 24rem) {
+  .setlist-create-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.setlists-message {
+  margin-top: 1rem;
+}
+
+.setlists-note {
+  margin-top: 2rem;
+  color: var(--text-muted);
+}
+
+.setlist-cards {
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.setlist-cards li + li {
+  border-top: 1px solid var(--line);
+}
+
+.setlist-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  min-height: 4rem;
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.setlist-card:focus-visible {
+  outline-offset: -3px;
+  border-radius: var(--radius-md);
+}
+
+.setlist-card-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.setlist-card-date {
+  font-size: 1.1875rem;
+  font-weight: 500;
+}
+
+.setlist-card-until {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.setlist-card-count {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: var(--sun);
+  color: var(--night);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}

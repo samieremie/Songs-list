@@ -1,5 +1,34 @@
 import { describe, it, expect } from "vitest";
-import { sungAgo, isRecent, todayISO } from "./dates";
+import {
+  sungAgo,
+  isRecent,
+  todayISO,
+  formatServiceDate,
+  formatDayMonth,
+  untilLabel,
+  nextWeekday,
+} from "./dates";
+
+describe("service dates", () => {
+  const tuesday = new Date(2026, 10, 3); // Tue 3 Nov 2026
+
+  it("formats a date the Romanian way", () => {
+    expect(formatServiceDate("2026-11-09")).toBe("Luni, 9 noiembrie");
+    expect(formatDayMonth("2026-11-09")).toBe("9 noiembrie");
+  });
+
+  it("says how far away a date is", () => {
+    expect(untilLabel("2026-11-03", tuesday)).toBe("azi");
+    expect(untilLabel("2026-11-04", tuesday)).toBe("mâine");
+    expect(untilLabel("2026-11-09", tuesday)).toBe("în 6 zile");
+    expect(untilLabel("2026-11-23", tuesday)).toBe("în 20 de zile");
+  });
+
+  it("finds the next Monday, today included", () => {
+    expect(nextWeekday(1, tuesday)).toBe("2026-11-09");
+    expect(nextWeekday(1, new Date(2026, 10, 9))).toBe("2026-11-09");
+  });
+});
 
 const now = new Date(2026, 10, 3); // 3 Nov 2026
 

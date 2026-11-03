@@ -37,12 +37,6 @@
   border-color: var(--danger-ink);
 }
 
-.field-error {
-  color: var(--danger-ink);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
 .song-form-submit {
   width: 100%;
   min-height: 3.25rem;

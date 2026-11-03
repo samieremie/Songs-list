@@ -14,12 +14,13 @@ Songs-list ("Lista de cântări tineret Elim Bruxelles") is a web app for the El
 | Path | Purpose |
 |---|---|
 | `main.jsx` | Entry point |
-| `pages/` | Route pages: `App.jsx` (router + layout), `Home.jsx` (`/`), `AddSong.jsx` (`/addsong`) |
-| `components/` | `TabBar` (bottom navigation), `SearchBar`, `SongCard` (one song row), `LetterIndex` (A–Z jump strip), `ConfirmSheet` (bottom-sheet confirmation), `SongForm` |
-| `api/` | `songsApi.js` (Supabase client) and `songs.js` (all queries on `songs`) |
-| `utils/` | `text.js` (diacritic-insensitive search, sorting, grouping, Romanian `plural`), `dates.js` (`sungAgo`, `isRecent`, `todayISO`) |
+| `pages/` | Route pages: `App.jsx` (router + layout), `Home.jsx` (`/`), `AddSong.jsx` (`/addsong`), `Setlists.jsx` (`/sub-liste`, overview and create), `Setlist.jsx` (`/sub-liste/:date`, one list) |
+| `components/` | `TabBar` (bottom navigation), `SearchBar`, `SongCard` (one song row), `LetterIndex` (A–Z jump strip), `Sheet` (base bottom sheet: scrim, focus, Escape), `ConfirmSheet`, `SetlistPickerSheet` (add a song to sub-lists from the main list), `SongPickerSheet` (add songs from a sub-list page), `SongForm` |
+| `api/` | `songsApi.js` (Supabase client), `songs.js` (queries on `songs`), `setlists.js` (queries on `setlists` / `setlist_songs`) |
+| `utils/` | `text.js` (diacritic-insensitive search, sorting, grouping, Romanian `plural`), `dates.js` (`sungAgo`, `isRecent`, `todayISO`, `formatServiceDate`, `formatWeekday`, `formatDayMonth`, `untilLabel`, `nextWeekday`) |
 | `css/` | One plain CSS file per component/page |
-| `test/` | Vitest setup and the shared Supabase mock |
+| `test/` | Vitest setup and the shared Supabase mock (pass a `resolver(table)` to answer per table) |
+| `../../supabase/setlists.sql` | One-time Supabase setup for sub-lists (tables, policies, cleanup job). Run it in the SQL Editor. |
 | `../public/_redirects` | Netlify SPA fallback (`/* /index.html 200`). Keep it, or direct links to routes return 404. |
 
 ### Design system ("Elim oasis")
@@ -27,7 +28,7 @@ Songs-list ("Lista de cântări tineret Elim Bruxelles") is a web app for the El
 - Tokens live on `:root` in `src/css/index.css`, with a dark-mode override under `prefers-color-scheme: dark`. Always use the variables, never raw hex values in component CSS.
 - Palette: `--night` #1E1B5E, `--spring` #00A6A6, `--sun` #FFC23D, `--hibiscus` #FF4F7B, `--palm` #2FBF71, `--paper` #F3F6FF. Text on these bright fills is always `--night`; use the `*-ink` tokens for colored text.
 - Fonts: **Unbounded 800** only for page titles and the letter tiles; **Rubik** for everything else.
-- The rotated, colored letter tiles are the one loud element. Keep everything else calm.
+- The rotated, colored letter tiles are the one loud element on the main list; on a sub-list page it's the weekday tile in the header. Keep everything else calm.
 - Phone first: touch targets of at least 48px, a bottom tab bar, the key always visible on every row, motion only in response to user actions, and `prefers-reduced-motion` respected.
 - Shared button classes: `.btn` + `.btn-sun` (primary), `.btn-palm` (mark as sung), `.btn-hibiscus` (destructive confirm), `.btn-outline`, `.btn-text-danger`.
 - The logo is `public/logo.png` (white line art on a transparent background), always shown on an indigo circle so it stays visible in light mode. It's hidden if the file fails to load. The browser tab icon (`public/favicon.png`) and the iPhone home-screen icon (`public/apple-touch-icon.png`) are the same logo on indigo. Don't hotlink the church website: it blocks requests from other sites.
@@ -36,6 +37,9 @@ Songs-list ("Lista de cântări tineret Elim Bruxelles") is a web app for the El
 
 - `songs`: `id`, `title`, `music_scale`, `last_sung` (date `YYYY-MM-DD`, or null).
 - A song counts as "recently sung" (`.is-recent`) if `last_sung` is within the last 30 days. "Marchează cântată azi" sets `last_sung` to today; "Anulează" restores the previous date.
+- `setlists`: `id`, `date` (unique: one sub-list per date), `created_at`.
+- `setlist_songs`: `setlist_id` → `setlists` (cascade), `song_id` → `songs` (cascade), `position` (singing order, rewritten 0…n-1 on reorder); primary key `(setlist_id, song_id)`.
+- **Expiry:** the `pg_cron` job `expire-setlists` runs `expire_setlists()` every hour. Once a list's date has passed (Brussels time), it sets each of its songs' `last_sung` to that date and deletes the list. The frontend also only shows lists with `date >= today`.
 - **No authentication.** Anyone with the link can add, delete and update songs. Don't assume RLS restricts anything.
 
 ## Build, test & lint
@@ -83,14 +87,8 @@ npm run preview      # Serve the built dist/
 
 ## Roadmap / planned features
 
-1. **Dated sub-lists (setlists).** Build a sub-list by picking songs from the main list for a specific service date. When the date has passed, the sub-list is deleted automatically.
-   - Proposed schema:
-     - `setlists` (`id`, `date`, optional `name`).
-     - `setlist_songs` (`setlist_id` FK → `setlists.id` **ON DELETE CASCADE**, `song_id` FK → `songs.id` ON DELETE CASCADE, `position`).
-   - Automatic cleanup: a Supabase `pg_cron` job runs daily and executes `delete from setlists where date < current_date`.
-   - The frontend also hides setlists with past dates, in case the job hasn't run yet.
-2. **Audio per song.** Likely stored in Supabase Storage and linked from `songs`.
-3. **Edit a song.** There is no edit UI yet.
+1. **Audio per song.** Likely stored in Supabase Storage and linked from `songs`.
+2. **Edit a song.** There is no edit UI yet.
 
 ## Workflow & git
 
