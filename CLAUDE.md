@@ -32,7 +32,7 @@ Songs-list ("Lista de cântări tineret Elim Bruxelles") is a web app for the El
 - The rotated, colored letter tiles are the one loud element on the main list; on a sub-list page it's the weekday tile in the header. Keep everything else calm.
 - Phone first: touch targets of at least 48px, a bottom tab bar, the key always visible on every row, motion only in response to user actions, and `prefers-reduced-motion` respected.
 - Shared button classes: `.btn` + `.btn-sun` (primary), `.btn-palm` (mark as sung), `.btn-hibiscus` (destructive confirm), `.btn-outline`, `.btn-text-danger`.
-- The logo is `public/logo.png` (white line art on a transparent background), always shown on an indigo circle so it stays visible in light mode. It's hidden if the file fails to load. The browser tab icon (`public/favicon.png`) and the iPhone home-screen icon (`public/apple-touch-icon.png`) are the same logo on indigo. Don't hotlink the church website: it blocks requests from other sites.
+- The logo is `public/logo.png` (white line art on a transparent background), always shown on an indigo circle so it stays visible in light mode. It's hidden if the file fails to load. The browser tab icon (`public/favicon.png`) and the iPhone home-screen icon (`public/apple-touch-icon.png`) are the same logo on indigo. `public/manifest.webmanifest` makes the home-screen app open full-screen; it uses `icon-192.png`, `apple-touch-icon.png` (512px) and `icon-maskable-512.png` (logo padded into Android's safe zone). Don't hotlink the church website: it blocks requests from other sites.
 
 ### Supabase data model
 
