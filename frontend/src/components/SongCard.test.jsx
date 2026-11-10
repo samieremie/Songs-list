@@ -83,43 +83,15 @@ describe("SongCard", () => {
     expect(onDelete).toHaveBeenCalledWith(song);
   });
 
-  it("marks a song as sung today and highlights it", async () => {
+  it("offers only sub-list and delete actions when open", async () => {
     const user = userEvent.setup();
-    const { row } = renderCard({ id: 3, title: "Aleluia", music_scale: "Do", last_sung: null });
+    const { row } = renderCard({ id: 3, title: "Aleluia", music_scale: "Do", last_sung: todayISO() });
 
     await openRow(user, "Aleluia");
-    await user.click(screen.getByRole("button", { name: "Marchează cântată azi" }));
 
-    expect(mock.current.client.from).toHaveBeenCalledWith("songs");
-    expect(mock.current.query.update).toHaveBeenCalledWith({ last_sung: todayISO() });
-    expect(mock.current.query.eq).toHaveBeenCalledWith("id", 3);
+    expect(screen.getByRole("button", { name: "Adaugă în sub-listă" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Șterge" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /cântată azi/ })).not.toBeInTheDocument();
     expect(row).toHaveClass("is-recent");
-    expect(screen.getByText("Cântată azi")).toBeInTheDocument();
-  });
-
-  it("undo restores the previous date", async () => {
-    const user = userEvent.setup();
-    renderCard({ id: 3, title: "Aleluia", music_scale: "Do", last_sung: "2020-01-05" });
-
-    await openRow(user, "Aleluia");
-    await user.click(screen.getByRole("button", { name: "Marchează cântată azi" }));
-    await user.click(screen.getByRole("button", { name: "Anulează „cântată azi”" }));
-
-    expect(mock.current.query.update).toHaveBeenLastCalledWith({ last_sung: "2020-01-05" });
-    expect(screen.queryByText("Cântată azi")).not.toBeInTheDocument();
-  });
-
-  it("shows a Romanian error message when the update fails", async () => {
-    const user = userEvent.setup();
-    mock.current = createSupabaseMock({ data: null, error: { message: "boom" } });
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    renderCard({ id: 3, title: "Aleluia", music_scale: "Do" });
-
-    await openRow(user, "Aleluia");
-    await user.click(screen.getByRole("button", { name: "Marchează cântată azi" }));
-
-    expect(
-      screen.getByText("Nu s-a putut actualiza cântarea. Încearcă din nou.")
-    ).toBeInTheDocument();
   });
 });

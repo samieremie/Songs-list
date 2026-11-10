@@ -31,13 +31,13 @@ Songs-list ("Lista de cântări tineret Elim Bruxelles") is a web app for the El
 - Fonts: **Unbounded 800** only for page titles and the letter tiles; **Rubik** for everything else.
 - The rotated, colored letter tiles are the one loud element on the main list; on a sub-list page it's the weekday tile in the header. Keep everything else calm.
 - Phone first: touch targets of at least 48px, a bottom tab bar, the key always visible on every row, motion only in response to user actions, and `prefers-reduced-motion` respected.
-- Shared button classes: `.btn` + `.btn-sun` (primary), `.btn-palm` (mark as sung), `.btn-hibiscus` (destructive confirm), `.btn-outline`, `.btn-text-danger`.
+- Shared button classes: `.btn` + `.btn-sun` (primary), `.btn-palm`, `.btn-hibiscus` (destructive confirm), `.btn-outline`, `.btn-text-danger`.
 - The logo is `public/logo.png` (white line art on a transparent background), always shown on an indigo circle so it stays visible in light mode. It's hidden if the file fails to load. The browser tab icon (`public/favicon.png`) and the iPhone home-screen icon (`public/apple-touch-icon.png`) are the same logo on indigo. `public/manifest.webmanifest` makes the home-screen app open full-screen; it uses `icon-192.png`, `apple-touch-icon.png` (512px) and `icon-maskable-512.png` (logo padded into Android's safe zone). Don't hotlink the church website: it blocks requests from other sites.
 
 ### Supabase data model
 
 - `songs`: `id`, `title`, `music_scale`, `last_sung` (date `YYYY-MM-DD`, or null).
-- A song counts as "recently sung" (`.is-recent`) if `last_sung` is within the last 30 days. "Marchează cântată azi" sets `last_sung` to today; "Anulează" restores the previous date.
+- A song counts as "recently sung" (`.is-recent`) if `last_sung` is within the last 30 days. `last_sung` is set only by the sub-list expiry job (there is no manual "mark as sung" button).
 - `setlists`: `id`, `date` (unique: one sub-list per date), `created_at`.
 - `setlist_songs`: `setlist_id` → `setlists` (cascade), `song_id` → `songs` (cascade), `position` (singing order, rewritten 0…n-1 on reorder); primary key `(setlist_id, song_id)`.
 - **Expiry:** the `pg_cron` job `expire-setlists` runs `expire_setlists()` every hour. Once a list's date has passed (Brussels time), it sets each of its songs' `last_sung` to that date and deletes the list. The frontend also only shows lists with `date >= today`.

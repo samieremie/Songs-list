@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { setLastSung } from "../api/songs";
-import { formatDayMonth, isRecent, sungAgo, todayISO } from "../utils/dates";
+import { useEffect, useRef } from "react";
+import { formatDayMonth, isRecent, sungAgo } from "../utils/dates";
 import "../css/SongCard.css";
 
 function SongCard({
@@ -12,15 +11,7 @@ function SongCard({
   onAddToSetlist,
 }) {
   const rowRef = useRef(null);
-  const [lastSung, setLastSungState] = useState(song.last_sung ?? null);
-  // Remembers the date before "today" so a wrong tap can be undone.
-  const [previousSung, setPreviousSung] = useState(null);
-  const [saving, setSaving] = useState(false);
-  const [updateError, setUpdateError] = useState(null);
-  const [justSung, setJustSung] = useState(false);
-
-  const today = todayISO();
-  const sungToday = lastSung === today;
+  const lastSung = song.last_sung ?? null;
   const detailsId = `song-${song.id}-details`;
 
   // When another open row above collapses, this row moves up: keep it on screen.
@@ -33,25 +24,6 @@ function SongCard({
     });
   }, [expanded]);
 
-  const saveDate = async (date, previous) => {
-    setSaving(true);
-    const { error } = await setLastSung(song.id, date);
-    setSaving(false);
-
-    if (error) {
-      console.error("Error updating last_sung:", error.message);
-      setUpdateError("Nu s-a putut actualiza cântarea. Încearcă din nou.");
-      return;
-    }
-    setUpdateError(null);
-    setPreviousSung(previous);
-    setLastSungState(date);
-    setJustSung(date === today);
-  };
-
-  const handleMarkSung = () => saveDate(today, lastSung);
-  const handleUndo = () => saveDate(previousSung, null);
-
   return (
     <li ref={rowRef} className={`song-row${isRecent(lastSung) ? " is-recent" : ""}`}>
       <button
@@ -63,11 +35,7 @@ function SongCard({
       >
         <span className="song-text">
           <span className="song-title">{song.title}</span>
-          {lastSung && (
-            <span className={`song-sung${justSung ? " pop" : ""}`}>
-              Cântată {sungAgo(lastSung)}
-            </span>
-          )}
+          {lastSung && <span className="song-sung">Cântată {sungAgo(lastSung)}</span>}
           {plannedDates.length > 0 && (
             <span className="song-planned">
               {plannedDates.length === 1 ? "În sub-lista din " : "În sub-listele din "}
@@ -82,25 +50,6 @@ function SongCard({
       </button>
 
       <div id={detailsId} className="song-actions" hidden={!expanded}>
-        {sungToday ? (
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={handleUndo}
-            disabled={saving}
-          >
-            Anulează „cântată azi”
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="btn btn-palm"
-            onClick={handleMarkSung}
-            disabled={saving}
-          >
-            Marchează cântată azi
-          </button>
-        )}
         <button
           type="button"
           className="btn btn-outline"
@@ -115,7 +64,6 @@ function SongCard({
         >
           Șterge
         </button>
-        {updateError && <p className="error-message song-error">{updateError}</p>}
       </div>
     </li>
   );

@@ -27,7 +27,3 @@ export function checkEditorCode(code) {
 export function isInvalidCodeError(error) {
   return error?.code === "28000";
 }
-
-export function setLastSung(id, date) {
-  return supabase.from("songs").update({ last_sung: date }).eq("id", id);
-}

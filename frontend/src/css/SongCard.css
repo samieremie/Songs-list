@@ -63,18 +63,6 @@
   vertical-align: 0.05em;
 }
 
-.song-sung.pop {
-  animation: sung-pop 380ms cubic-bezier(0.3, 1.6, 0.5, 1);
-  transform-origin: left center;
-}
-
-@keyframes sung-pop {
-  from {
-    transform: scale(0.7);
-    opacity: 0;
-  }
-}
-
 .song-key {
   min-width: 4.75rem;
   padding: 0.3rem 0.6rem;
@@ -100,8 +88,4 @@
 
 .song-actions[hidden] {
   display: none;
-}
-
-.song-error {
-  flex-basis: 100%;
 }
