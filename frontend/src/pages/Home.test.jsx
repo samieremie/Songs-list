@@ -66,6 +66,26 @@ describe("Home", () => {
     expect(screen.getByRole("link", { name: "Adaug-o în listă" })).toBeInTheDocument();
   });
 
+  it("keeps only one song open: opening another closes the previous one", async () => {
+    const user = userEvent.setup();
+    renderHome();
+    const aleluia = await screen.findByRole("button", { name: /Aleluia/ });
+    const canta = screen.getByRole("button", { name: /Cântă inima/ });
+
+    await user.click(aleluia);
+    expect(aleluia).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("button", { name: "Șterge" })).toHaveLength(1);
+
+    await user.click(canta);
+    expect(aleluia).toHaveAttribute("aria-expanded", "false");
+    expect(canta).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("button", { name: "Șterge" })).toHaveLength(1);
+
+    await user.click(canta);
+    expect(canta).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "Șterge" })).not.toBeInTheDocument();
+  });
+
   it("asks for confirmation before deleting a song", async () => {
     window.localStorage.setItem("editorCode", "secret");
     const user = userEvent.setup();

@@ -40,6 +40,9 @@ function Home() {
   const [setlists, setSetlists] = useState([]);
   const [setlistsError, setSetlistsError] = useState(null);
   const [pickerSong, setPickerSong] = useState(null);
+  // Only one song row shows its actions at a time.
+  const [openSongId, setOpenSongId] = useState(null);
+  const toggleSong = (id) => setOpenSongId((current) => (current === id ? null : id));
 
   useEffect(() => {
     let cancelled = false;
@@ -236,6 +239,8 @@ function Home() {
                 key={song.id}
                 song={song}
                 plannedDates={plannedDates.get(song.id)}
+                expanded={openSongId === song.id}
+                onToggle={() => toggleSong(song.id)}
                 onDelete={requestDelete}
                 onAddToSetlist={setPickerSong}
               />

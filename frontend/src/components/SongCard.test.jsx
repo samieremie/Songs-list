@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createSupabaseMock } from "../test/supabaseMock";
@@ -11,12 +12,18 @@ vi.mock("../api/songsApi", () => ({
 
 import SongCard from "./SongCard";
 
-function renderCard(song, onDelete = vi.fn()) {
-  const utils = render(
+// SongCard is controlled by its parent; this harness plays the parent's role.
+function Harness(props) {
+  const [expanded, setExpanded] = useState(false);
+  return (
     <ul>
-      <SongCard song={song} onDelete={onDelete} />
+      <SongCard {...props} expanded={expanded} onToggle={() => setExpanded((o) => !o)} />
     </ul>
   );
+}
+
+function renderCard(song, onDelete = vi.fn()) {
+  const utils = render(<Harness song={song} onDelete={onDelete} />);
   return { ...utils, row: utils.container.querySelector(".song-row"), onDelete };
 }
 
@@ -34,6 +41,30 @@ describe("SongCard", () => {
     expect(screen.getByText("Ce bine e")).toBeInTheDocument();
     expect(screen.getByText("Re")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Șterge" })).not.toBeInTheDocument();
+  });
+
+  it("lets the parent decide whether the row is open", async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+    const song = { id: 1, title: "Ce bine e", music_scale: "Re" };
+    const { rerender } = render(
+      <ul>
+        <SongCard song={song} expanded={false} onToggle={onToggle} />
+      </ul>
+    );
+    const summary = screen.getByRole("button", { name: /Ce bine e/ });
+
+    await user.click(summary);
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(summary).toHaveAttribute("aria-expanded", "false");
+
+    rerender(
+      <ul>
+        <SongCard song={song} expanded onToggle={onToggle} />
+      </ul>
+    );
+    expect(summary).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "Șterge" })).toBeInTheDocument();
   });
 
   it("shows when the song was last sung", () => {

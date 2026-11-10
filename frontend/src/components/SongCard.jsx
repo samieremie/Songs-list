@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { setLastSung } from "../api/songs";
 import { formatDayMonth, isRecent, sungAgo, todayISO } from "../utils/dates";
 import "../css/SongCard.css";
 
-function SongCard({ song, plannedDates = [], onDelete, onAddToSetlist }) {
-  const [expanded, setExpanded] = useState(false);
+function SongCard({
+  song,
+  plannedDates = [],
+  expanded = false,
+  onToggle,
+  onDelete,
+  onAddToSetlist,
+}) {
+  const rowRef = useRef(null);
   const [lastSung, setLastSungState] = useState(song.last_sung ?? null);
   // Remembers the date before "today" so a wrong tap can be undone.
   const [previousSung, setPreviousSung] = useState(null);
@@ -15,6 +22,16 @@ function SongCard({ song, plannedDates = [], onDelete, onAddToSetlist }) {
   const today = todayISO();
   const sungToday = lastSung === today;
   const detailsId = `song-${song.id}-details`;
+
+  // When another open row above collapses, this row moves up: keep it on screen.
+  useEffect(() => {
+    if (!expanded) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    rowRef.current?.scrollIntoView?.({
+      block: "nearest",
+      behavior: reduce ? "auto" : "smooth",
+    });
+  }, [expanded]);
 
   const saveDate = async (date, previous) => {
     setSaving(true);
@@ -36,13 +53,13 @@ function SongCard({ song, plannedDates = [], onDelete, onAddToSetlist }) {
   const handleUndo = () => saveDate(previousSung, null);
 
   return (
-    <li className={`song-row${isRecent(lastSung) ? " is-recent" : ""}`}>
+    <li ref={rowRef} className={`song-row${isRecent(lastSung) ? " is-recent" : ""}`}>
       <button
         type="button"
         className="song-summary"
         aria-expanded={expanded}
         aria-controls={detailsId}
-        onClick={() => setExpanded((open) => !open)}
+        onClick={onToggle}
       >
         <span className="song-text">
           <span className="song-title">{song.title}</span>
