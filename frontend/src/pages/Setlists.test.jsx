@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { createSupabaseMock } from "../test/supabaseMock";
@@ -16,9 +16,9 @@ const upcoming = [
   { id: 2, date: "2099-01-12", setlist_songs: [] },
 ];
 
-const renderPage = () =>
+const renderPage = (state) =>
   render(
-    <MemoryRouter initialEntries={["/sub-liste"]}>
+    <MemoryRouter initialEntries={[{ pathname: "/sub-liste", state }]}>
       <Routes>
         <Route path="/sub-liste" element={<Setlists />} />
         <Route path="/sub-liste/:date" element={<p>Pagina sub-listei</p>} />
@@ -36,8 +36,34 @@ describe("Setlists", () => {
 
     expect(await screen.findByText("2 cântări")).toBeInTheDocument();
     expect(screen.getByText("goală")).toBeInTheDocument();
-    expect(mock.current.query.gte).toHaveBeenCalledWith("date", expect.any(String));
+    expect(mock.current.query.gte).not.toHaveBeenCalled();
     expect(screen.getAllByRole("link")[0]).toHaveAttribute("href", "/sub-liste/2099-01-05");
+  });
+
+  it("puts past sub-lists first, to be closed", async () => {
+    mock.current = createSupabaseMock({
+      data: [{ id: 3, date: "2020-01-06", setlist_songs: [{ song_id: 1 }] }, ...upcoming],
+      error: null,
+    });
+    renderPage();
+
+    const past = await screen.findByRole("list", { name: "Sub-liste de încheiat" });
+    expect(screen.getByRole("heading", { name: "De încheiat" })).toBeInTheDocument();
+    expect(within(past).getByRole("link")).toHaveAttribute("href", "/sub-liste/2020-01-06");
+    expect(within(past).getByText("o cântare")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("list", { name: "Sub-liste pregătite" })).getAllByRole("link")
+    ).toHaveLength(2);
+  });
+
+  it("says where the unsung songs went after closing a list", async () => {
+    renderPage({ closed: "2026-11-09", moved: 2, movedTo: "2026-11-16" });
+
+    expect(
+      await screen.findByText(
+        "Sub-lista din 9 noiembrie a fost încheiată. 2 cântări au fost mutate în sub-lista din 16 noiembrie."
+      )
+    ).toBeInTheDocument();
   });
 
   it("shows an empty state when there are no sub-lists", async () => {

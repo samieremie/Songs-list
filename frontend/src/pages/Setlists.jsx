@@ -1,11 +1,44 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { createSetlist, DUPLICATE_DATE, listUpcomingSetlists } from "../api/setlists";
+import { createSetlist, DUPLICATE_DATE, listSetlists } from "../api/setlists";
 import { formatDayMonth, formatServiceDate, nextWeekday, todayISO, untilLabel } from "../utils/dates";
 import { plural } from "../utils/text";
 import "../css/Setlists.css";
 
 const MONDAY = 1;
+
+function statusFromState(state) {
+  if (state?.deleted) return `Sub-lista din ${formatDayMonth(state.deleted)} a fost ștearsă.`;
+  if (state?.closed) {
+    const closed = `Sub-lista din ${formatDayMonth(state.closed)} a fost încheiată.`;
+    if (!state.moved || !state.movedTo) return closed;
+    const moved =
+      state.moved === 1
+        ? "O cântare a fost mutată"
+        : `${plural(state.moved, "o cântare", "cântări")} au fost mutate`;
+    return `${closed} ${moved} în sub-lista din ${formatDayMonth(state.movedTo)}.`;
+  }
+  return null;
+}
+
+function SetlistCard({ setlist, past }) {
+  const count = setlist.setlist_songs?.length ?? 0;
+  return (
+    <li>
+      <Link to={`/sub-liste/${setlist.date}`} className="setlist-card">
+        <span className="setlist-card-text">
+          <span className="setlist-card-date">{formatServiceDate(setlist.date)}</span>
+          <span className="setlist-card-until">
+            {past ? "De încheiat" : untilLabel(setlist.date)}
+          </span>
+        </span>
+        <span className={past ? "setlist-card-count is-past" : "setlist-card-count"}>
+          {count === 0 ? "goală" : plural(count, "o cântare", "cântări")}
+        </span>
+      </Link>
+    </li>
+  );
+}
 
 function Setlists() {
   const navigate = useNavigate();
@@ -15,11 +48,7 @@ function Setlists() {
   const [setlists, setSetlists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [statusMessage] = useState(() =>
-    location.state?.deleted
-      ? `Sub-lista din ${formatDayMonth(location.state.deleted)} a fost ștearsă.`
-      : null
-  );
+  const [statusMessage] = useState(() => statusFromState(location.state));
 
   const [date, setDate] = useState(() => nextWeekday(MONDAY));
   const [creating, setCreating] = useState(false);
@@ -29,7 +58,7 @@ function Setlists() {
     let cancelled = false;
 
     const fetchSetlists = async () => {
-      const { data, error } = await listUpcomingSetlists(today);
+      const { data, error } = await listSetlists();
       if (cancelled) return;
 
       if (error) {
@@ -45,7 +74,10 @@ function Setlists() {
     return () => {
       cancelled = true;
     };
-  }, [today]);
+  }, []);
+
+  const past = setlists.filter((s) => s.date < today);
+  const upcoming = setlists.filter((s) => s.date >= today);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -74,7 +106,8 @@ function Setlists() {
     <section className="setlists-page">
       <h1 className="page-title">Sub-liste</h1>
       <p className="page-lede">
-        Cântările pregătite pentru o zi anume. O sub-listă dispare singură după ziua ei.
+        Cântările pregătite pentru o zi anume. După ziua ei, încheie sub-lista și alege ce nu
+        s-a cântat.
       </p>
 
       <form className="setlist-create" onSubmit={handleCreate} noValidate>
@@ -110,29 +143,30 @@ function Setlists() {
 
       {loading && <p className="setlists-note">Se încarcă sub-listele…</p>}
 
-      {!loading && !loadError && setlists.length === 0 && (
+      {past.length > 0 && (
+        <>
+          <h2 className="setlists-group-title">De încheiat</h2>
+          <ul className="setlist-cards setlist-cards-past" aria-label="Sub-liste de încheiat">
+            {past.map((setlist) => (
+              <SetlistCard key={setlist.id} setlist={setlist} past />
+            ))}
+          </ul>
+        </>
+      )}
+
+      {!loading && !loadError && upcoming.length === 0 && (
         <p className="setlists-note">Nicio sub-listă încă. Creează una pentru luni.</p>
       )}
 
-      {setlists.length > 0 && (
-        <ul className="setlist-cards" aria-label="Sub-liste pregătite">
-          {setlists.map((setlist) => {
-            const count = setlist.setlist_songs?.length ?? 0;
-            return (
-              <li key={setlist.id}>
-                <Link to={`/sub-liste/${setlist.date}`} className="setlist-card">
-                  <span className="setlist-card-text">
-                    <span className="setlist-card-date">{formatServiceDate(setlist.date)}</span>
-                    <span className="setlist-card-until">{untilLabel(setlist.date)}</span>
-                  </span>
-                  <span className="setlist-card-count">
-                    {count === 0 ? "goală" : plural(count, "o cântare", "cântări")}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+      {upcoming.length > 0 && (
+        <>
+          {past.length > 0 && <h2 className="setlists-group-title">Următoarele</h2>}
+          <ul className="setlist-cards" aria-label="Sub-liste pregătite">
+            {upcoming.map((setlist) => (
+              <SetlistCard key={setlist.id} setlist={setlist} />
+            ))}
+          </ul>
+        </>
       )}
     </section>
   );

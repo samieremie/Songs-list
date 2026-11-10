@@ -15,12 +15,12 @@ Songs-list ("Lista de cântări tineret Elim Bruxelles") is a web app for the El
 |---|---|
 | `main.jsx` | Entry point |
 | `pages/` | Route pages: `App.jsx` (router + layout), `Home.jsx` (`/`), `AddSong.jsx` (`/addsong`), `Setlists.jsx` (`/sub-liste`, overview and create), `Setlist.jsx` (`/sub-liste/:date`, one list) |
-| `components/` | `TabBar` (bottom navigation), `SearchBar`, `SongCard` (one song row), `LetterIndex` (A–Z jump strip), `Sheet` (base bottom sheet: scrim, focus, Escape), `ConfirmSheet`, `SetlistPickerSheet` (add a song to sub-lists from the main list), `SongPickerSheet` (add songs from a sub-list page), `SongForm` (add and edit), `EditSongSheet` (edit title and key), `EditorCodeForm` / `EditorCodeSheet` (ask for the editor code) |
+| `components/` | `TabBar` (bottom navigation), `SearchBar`, `SongCard` (one song row), `LetterIndex` (A–Z jump strip), `Sheet` (base bottom sheet: scrim, focus, Escape), `ConfirmSheet`, `CloseSetlistSheet` (close a past sub-list, tick the songs not sung), `SetlistPickerSheet` (add a song to sub-lists from the main list), `SongPickerSheet` (add songs from a sub-list page), `SongForm` (add and edit), `EditSongSheet` (edit title and key), `EditorCodeForm` / `EditorCodeSheet` (ask for the editor code) |
 | `api/` | `songsApi.js` (Supabase client), `songs.js` (queries on `songs`), `setlists.js` (queries on `setlists` / `setlist_songs`) |
 | `utils/` | `editorCode.js` (editor code remembered in `localStorage`), `text.js` (diacritic-insensitive search, sorting, grouping, Romanian `plural`), `dates.js` (`sungAgo`, `isRecent`, `todayISO`, `formatServiceDate`, `formatWeekday`, `formatDayMonth`, `untilLabel`, `nextWeekday`) |
 | `css/` | One plain CSS file per component/page |
 | `test/` | Vitest setup and the shared Supabase mock (pass a `resolver(table)` to answer per table) |
-| `../../supabase/setlists.sql` | One-time Supabase setup for sub-lists (tables, policies, cleanup job). Run it in the SQL Editor. |
+| `../../supabase/setlists.sql` | Supabase setup for sub-lists (tables, policies, `close_setlist` RPC). Safe to re-run in the SQL Editor to apply updates. |
 | `../../supabase/editor-code.sql` | One-time Supabase setup for the editor code (`add_song`, `update_song`, `delete_song`, `check_editor_code`, locks `songs`). The real code is set by hand and never committed. |
 | `../public/_redirects` | Netlify SPA fallback (`/* /index.html 200`). Keep it, or direct links to routes return 404. |
 
@@ -37,10 +37,10 @@ Songs-list ("Lista de cântări tineret Elim Bruxelles") is a web app for the El
 ### Supabase data model
 
 - `songs`: `id`, `title`, `music_scale`, `last_sung` (date `YYYY-MM-DD`, or null).
-- A song counts as "recently sung" (`.is-recent`) if `last_sung` is within the last 30 days. `last_sung` is set only by the sub-list expiry job (there is no manual "mark as sung" button).
+- A song counts as "recently sung" (`.is-recent`) if `last_sung` is within the last 30 days. `last_sung` is set only when a sub-list is closed (there is no manual "mark as sung" button).
 - `setlists`: `id`, `date` (unique: one sub-list per date), `created_at`.
 - `setlist_songs`: `setlist_id` → `setlists` (cascade), `song_id` → `songs` (cascade), `position` (singing order, rewritten 0…n-1 on reorder); primary key `(setlist_id, song_id)`.
-- **Expiry:** the `pg_cron` job `expire-setlists` runs `expire_setlists()` every hour. Once a list's date has passed (Brussels time), it sets each of its songs' `last_sung` to that date and deletes the list. The frontend also only shows lists with `date >= today`.
+- **Closing a list:** lists never disappear on their own (the old `expire-setlists` cron job is removed). After a list's day has passed (Brussels time), its page shows "Încheie sub-lista"; the user ticks the songs that were not sung and the `close_setlist(p_setlist_id, p_unsung_ids)` RPC, in one transaction, sets `last_sung` = the list's date for the other songs, appends the unsung ones to the list of the first Monday after the list's date that is today or later (created if missing; `nextMondayAfter` in `utils/dates.js` mirrors this), and deletes the list. Past lists appear first on `/sub-liste` under "De încheiat" and are read-only; the main list's "add to sub-list" sheet only offers upcoming lists.
 - **Editor code, no accounts.** Adding, editing (title and key) and deleting songs need a shared code, checked in Supabase by the `add_song` / `update_song` / `delete_song` RPCs (`supabase/editor-code.sql`); the anon role can't insert, delete or change title/key in `songs` directly. A wrong code returns SQLSTATE `28000` (`isInvalidCodeError` in `api/songs.js`). Anyone can still read songs, update `last_sung`, and do everything on sub-lists. New write actions on `songs` need their own RPC that checks the code.
 
 ## Build, test & lint

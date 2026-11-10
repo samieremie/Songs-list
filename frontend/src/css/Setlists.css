@@ -111,3 +111,29 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+.setlists-group-title {
+  margin-top: 2rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.setlists-group-title + .setlist-cards {
+  margin-top: 0.75rem;
+}
+
+/* Past lists waiting to be closed. */
+.setlist-cards-past {
+  border-color: var(--sun);
+}
+
+.setlist-cards-past .setlist-card-until {
+  color: var(--danger-ink);
+  font-weight: 500;
+}
+
+.setlist-card-count.is-past {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+}

@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { createSupabaseMock } from "../test/supabaseMock";
 
 const mock = vi.hoisted(() => ({ current: null }));
 vi.mock("../api/songsApi", () => ({
-  default: { from: (...args) => mock.current.client.from(...args) },
+  default: {
+    from: (...args) => mock.current.client.from(...args),
+    rpc: (...args) => mock.current.client.rpc(...args),
+  },
 }));
 
 import Setlist from "./Setlist";
@@ -39,11 +42,16 @@ function mockTables(overrides = {}) {
   return results;
 }
 
-const renderPage = () =>
+function SetlistsStub() {
+  const location = useLocation();
+  return <p>Pagina sub-listelor {JSON.stringify(location.state)}</p>;
+}
+
+const renderPage = (date = DATE) =>
   render(
-    <MemoryRouter initialEntries={[`/sub-liste/${DATE}`]}>
+    <MemoryRouter initialEntries={[`/sub-liste/${date}`]}>
       <Routes>
-        <Route path="/sub-liste" element={<p>Pagina sub-listelor</p>} />
+        <Route path="/sub-liste" element={<SetlistsStub />} />
         <Route path="/sub-liste/:date" element={<Setlist />} />
       </Routes>
     </MemoryRouter>
@@ -138,7 +146,7 @@ describe("Setlist", () => {
     await user.click(within(sheet).getByRole("button", { name: "Șterge sub-lista" }));
 
     expect(mock.current.queries.setlists.delete).toHaveBeenCalled();
-    expect(await screen.findByText("Pagina sub-listelor")).toBeInTheDocument();
+    expect(await screen.findByText(/Pagina sub-listelor/)).toBeInTheDocument();
   });
 
   it("says when the sub-list no longer exists", async () => {
@@ -146,7 +154,76 @@ describe("Setlist", () => {
     renderPage();
 
     expect(
-      await screen.findByText("Sub-lista nu mai există. Poate ziua ei a trecut deja.")
+      await screen.findByText("Sub-lista nu există sau a fost deja încheiată.")
     ).toBeInTheDocument();
+  });
+
+  it("has no close button before the list's day has passed", async () => {
+    renderPage();
+    await screen.findByText("Osana");
+
+    expect(screen.queryByRole("button", { name: "Încheie sub-lista" })).not.toBeInTheDocument();
+  });
+
+  describe("once its day has passed", () => {
+    const PAST = "2020-01-06";
+
+    beforeEach(() => {
+      mockTables({
+        setlists: { data: { ...setlistRow, date: PAST }, error: null },
+        close_setlist: { data: "2026-11-16", error: null },
+      });
+    });
+
+    it("still shows the list, read-only, with a close button", async () => {
+      renderPage(PAST);
+
+      expect(await screen.findByText("Osana")).toBeInTheDocument();
+      expect(screen.getByText("A fost pe 6 ianuarie, 2 cântări")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Încheie sub-lista" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Adaugă cântări" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "Mută „Aleluia” mai jos" })
+      ).not.toBeInTheDocument();
+    });
+
+    it("closes the list with the songs ticked as not sung", async () => {
+      const user = userEvent.setup();
+      renderPage(PAST);
+      await screen.findByText("Osana");
+
+      await user.click(screen.getByRole("button", { name: "Încheie sub-lista" }));
+      const sheet = screen.getByRole("dialog", { name: "Încheie sub-lista din 6 ianuarie" });
+      expect(sheet).toHaveTextContent("Bifează cântările care nu s-au cântat.");
+      await user.click(within(sheet).getByRole("checkbox", { name: /Osana/ }));
+      await user.click(within(sheet).getByRole("button", { name: "Încheie" }));
+
+      expect(mock.current.client.rpc).toHaveBeenCalledWith("close_setlist", {
+        p_setlist_id: 7,
+        p_unsung_ids: [5],
+      });
+      expect(await screen.findByText(/Pagina sub-listelor/)).toHaveTextContent(
+        '{"closed":"2020-01-06","moved":1,"movedTo":"2026-11-16"}'
+      );
+    });
+
+    it("shows an error when closing fails", async () => {
+      const user = userEvent.setup();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      mockTables({
+        setlists: { data: { ...setlistRow, date: PAST }, error: null },
+        close_setlist: { data: null, error: { message: "boom" } },
+      });
+      renderPage(PAST);
+      await screen.findByText("Osana");
+
+      await user.click(screen.getByRole("button", { name: "Încheie sub-lista" }));
+      await user.click(screen.getByRole("button", { name: "Încheie" }));
+
+      expect(
+        await screen.findByText("Sub-lista nu a putut fi încheiată. Încearcă din nou.")
+      ).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
   });
 });

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import CloseSetlistSheet from "../components/CloseSetlistSheet";
 import ConfirmSheet from "../components/ConfirmSheet";
 import SongPickerSheet from "../components/SongPickerSheet";
 import {
   addSongToSetlist,
+  closeSetlist,
   deleteSetlist,
   getSetlistByDate,
   removeSongFromSetlist,
@@ -20,7 +22,9 @@ const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 function Setlist() {
   const { date } = useParams();
   const navigate = useNavigate();
-  const validDate = /^\d{4}-\d{2}-\d{2}$/.test(date ?? "") && date >= todayISO();
+  const validDate = /^\d{4}-\d{2}-\d{2}$/.test(date ?? "");
+  // A list stays after its day until someone closes it.
+  const isPast = validDate && date < todayISO();
 
   const [setlist, setSetlist] = useState(null);
   const [loading, setLoading] = useState(validDate);
@@ -33,6 +37,10 @@ function Setlist() {
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const [closeError, setCloseError] = useState(null);
 
   useEffect(() => {
     if (!validDate) return;
@@ -139,6 +147,25 @@ function Setlist() {
     navigate("/sub-liste", { state: { deleted: setlist.date } });
   };
 
+  const cancelClose = useCallback(() => {
+    setCloseOpen(false);
+    setCloseError(null);
+  }, []);
+
+  const handleClose = async (unsungIds) => {
+    setClosing(true);
+    const { data, error } = await closeSetlist(setlist.id, unsungIds);
+    setClosing(false);
+    if (error) {
+      console.error("Error closing setlist:", error.message);
+      setCloseError("Sub-lista nu a putut fi încheiată. Încearcă din nou.");
+      return;
+    }
+    navigate("/sub-liste", {
+      state: { closed: setlist.date, moved: unsungIds.length, movedTo: data ?? null },
+    });
+  };
+
   const backLink = (
     <Link to="/sub-liste" className="back-link">
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -153,7 +180,7 @@ function Setlist() {
       <section className="setlist-page">
         {backLink}
         <div className="setlist-missing">
-          <p>Sub-lista nu mai există. Poate ziua ei a trecut deja.</p>
+          <p>Sub-lista nu există sau a fost deja încheiată.</p>
           <Link to="/sub-liste" className="btn btn-sun">
             Vezi sub-listele
           </Link>
@@ -172,7 +199,7 @@ function Setlist() {
           <span className="setlist-daymonth">{formatDayMonth(date)}</span>
         </h1>
         <p className="setlist-summary">
-          {capitalize(untilLabel(date))}
+          {isPast ? `A fost pe ${formatDayMonth(date)}` : capitalize(untilLabel(date))}
           {setlist && `, ${plural(songs.length, "o cântare", "cântări")}`}
         </p>
       </header>
@@ -184,7 +211,18 @@ function Setlist() {
       {loading && <p className="setlist-note">Se încarcă sub-lista…</p>}
 
       {setlist && songs.length === 0 && (
-        <p className="setlist-note">Sub-lista e goală. Adaugă cântări din lista principală.</p>
+        <p className="setlist-note">
+          {isPast
+            ? "Sub-lista e goală."
+            : "Sub-lista e goală. Adaugă cântări din lista principală."}
+        </p>
+      )}
+
+      {setlist && isPast && (
+        <p className="setlist-past-note">
+          Ziua sub-listei a trecut. Încheie-o ca să marchezi cântările cântate și să le muți pe
+          celelalte în sub-lista de luni.
+        </p>
       )}
 
       {songs.length > 0 && (
@@ -199,38 +237,40 @@ function Setlist() {
                 <span className="visually-hidden">Gama </span>
                 {song.music_scale}
               </span>
-              <div className="setlist-tools">
-                <button
-                  type="button"
-                  className="icon-btn"
-                  aria-label={`Mută „${song.title}” mai sus`}
-                  disabled={index === 0}
-                  onClick={() => move(index, -1)}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 7.6 5.4 14.2 6.8 15.6 12 10.4l5.2 5.2 1.4-1.4z" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className="icon-btn"
-                  aria-label={`Mută „${song.title}” mai jos`}
-                  disabled={index === songs.length - 1}
-                  onClick={() => move(index, 1)}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 16.4 5.4 9.8 6.8 8.4 12 13.6l5.2-5.2 1.4 1.4z" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-text-danger setlist-remove"
-                  aria-label={`Scoate „${song.title}” din sub-listă`}
-                  onClick={() => remove(song)}
-                >
-                  Scoate
-                </button>
-              </div>
+              {!isPast && (
+                <div className="setlist-tools">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    aria-label={`Mută „${song.title}” mai sus`}
+                    disabled={index === 0}
+                    onClick={() => move(index, -1)}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 7.6 5.4 14.2 6.8 15.6 12 10.4l5.2 5.2 1.4-1.4z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    aria-label={`Mută „${song.title}” mai jos`}
+                    disabled={index === songs.length - 1}
+                    onClick={() => move(index, 1)}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 16.4 5.4 9.8 6.8 8.4 12 13.6l5.2-5.2 1.4 1.4z" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-text-danger setlist-remove"
+                    aria-label={`Scoate „${song.title}” din sub-listă`}
+                    onClick={() => remove(song)}
+                  >
+                    Scoate
+                  </button>
+                </div>
+              )}
             </li>
           ))}
         </ol>
@@ -238,9 +278,15 @@ function Setlist() {
 
       {setlist && (
         <div className="setlist-actions">
-          <button type="button" className="btn btn-sun" onClick={openPicker}>
-            Adaugă cântări
-          </button>
+          {isPast ? (
+            <button type="button" className="btn btn-sun" onClick={() => setCloseOpen(true)}>
+              Încheie sub-lista
+            </button>
+          ) : (
+            <button type="button" className="btn btn-sun" onClick={openPicker}>
+              Adaugă cântări
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-text-danger"
@@ -263,10 +309,25 @@ function Setlist() {
         />
       )}
 
+      {closeOpen && (
+        <CloseSetlistSheet
+          date={date}
+          songs={songs}
+          busy={closing}
+          error={closeError}
+          onConfirm={handleClose}
+          onCancel={cancelClose}
+        />
+      )}
+
       {confirmDelete && (
         <ConfirmSheet
           title={`Ștergi sub-lista din ${formatDayMonth(date)}?`}
-          message="Cântările rămân în lista principală."
+          message={
+            isPast
+              ? "Cântările rămân în lista principală, dar nu vor fi marcate ca fiind cântate."
+              : "Cântările rămân în lista principală."
+          }
           confirmLabel="Șterge sub-lista"
           cancelLabel="Renunță"
           busy={deleting}

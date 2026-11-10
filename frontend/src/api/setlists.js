@@ -1,9 +1,8 @@
 import supabase from "./songsApi";
 
 // All queries on `setlists` and `setlist_songs`. Every helper returns
-// { data, error }. Expired lists are deleted by the expire_setlists() job
-// (see supabase/setlists.sql); callers still filter by date in case the job
-// has not run yet.
+// { data, error }. A list stays after its day until someone closes it with
+// closeSetlist() (the close_setlist RPC in supabase/setlists.sql).
 
 export const DUPLICATE_DATE = "23505";
 
@@ -13,6 +12,14 @@ export function listUpcomingSetlists(today) {
     .from("setlists")
     .select("id, date, setlist_songs(song_id, position)")
     .gte("date", today)
+    .order("date", { ascending: true });
+}
+
+// Every list, past ones included, with their song ids, oldest first.
+export function listSetlists() {
+  return supabase
+    .from("setlists")
+    .select("id, date, setlist_songs(song_id, position)")
     .order("date", { ascending: true });
 }
 
@@ -66,4 +73,14 @@ export function reorderSetlist(setlistId, orderedSongIds) {
   return supabase
     .from("setlist_songs")
     .upsert(rows, { onConflict: "setlist_id,song_id" });
+}
+
+// Closes a list whose day has passed: unsungIds move to the next Monday's
+// list (created if needed), the other songs are marked as sung on its date,
+// and the list is deleted. data = the Monday's date, or null if none moved.
+export function closeSetlist(setlistId, unsungIds) {
+  return supabase.rpc("close_setlist", {
+    p_setlist_id: setlistId,
+    p_unsung_ids: unsungIds,
+  });
 }

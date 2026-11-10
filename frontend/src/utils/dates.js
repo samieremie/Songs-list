@@ -73,6 +73,15 @@ export function nextWeekday(weekday, now = new Date()) {
   return todayISO(date);
 }
 
+// Where the unsung songs of a closed list go: the first Monday after isoDate
+// that is also today or later. Mirrors close_setlist() in supabase/setlists.sql.
+export function nextMondayAfter(isoDate, now = new Date()) {
+  const dayAfter = parseISO(isoDate);
+  dayAfter.setDate(dayAfter.getDate() + 1);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return nextWeekday(1, dayAfter > today ? dayAfter : today);
+}
+
 // "azi", "ieri", "acum 5 zile", "acum o săptămână", "acum 3 luni"...
 export function sungAgo(isoDate, now = new Date()) {
   const days = daysSince(isoDate, now);
