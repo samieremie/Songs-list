@@ -83,15 +83,28 @@ describe("SongCard", () => {
     expect(onDelete).toHaveBeenCalledWith(song);
   });
 
-  it("offers only sub-list and delete actions when open", async () => {
+  it("offers sub-list, edit and delete actions when open", async () => {
     const user = userEvent.setup();
     const { row } = renderCard({ id: 3, title: "Aleluia", music_scale: "Do", last_sung: todayISO() });
 
     await openRow(user, "Aleluia");
 
     expect(screen.getByRole("button", { name: "Adaugă în sub-listă" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Modifică" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Șterge" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /cântată azi/ })).not.toBeInTheDocument();
     expect(row).toHaveClass("is-recent");
+  });
+
+  it("asks the parent to edit the song", async () => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+    const song = { id: 7, title: "Aleluia", music_scale: "Do" };
+    render(<Harness song={song} onEdit={onEdit} />);
+
+    await openRow(user, "Aleluia");
+    await user.click(screen.getByRole("button", { name: "Modifică" }));
+
+    expect(onEdit).toHaveBeenCalledWith(song);
   });
 });

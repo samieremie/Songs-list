@@ -45,4 +45,27 @@ describe("SongForm", () => {
     expect(screen.getByLabelText("Titlu")).toHaveValue("Aleluia");
     expect(screen.getByLabelText("Gama")).toHaveValue("Sol");
   });
+
+  it("can edit an existing song: prefilled, custom label, fields kept after saving", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(true);
+    render(
+      <SongForm
+        onSubmit={onSubmit}
+        initialTitle="Aleluia"
+        initialMusicScale="Sol"
+        submitLabel="Salvează"
+        resetOnSuccess={false}
+      />
+    );
+
+    expect(screen.getByLabelText("Gama")).toHaveValue("Sol");
+    await user.clear(screen.getByLabelText("Gama"));
+    await user.type(screen.getByLabelText("Gama"), "Mi");
+    await user.click(screen.getByRole("button", { name: "Salvează" }));
+
+    expect(onSubmit).toHaveBeenCalledWith({ title: "Aleluia", musicScale: "Mi" });
+    expect(screen.getByLabelText("Titlu")).toHaveValue("Aleluia");
+    expect(screen.getByLabelText("Gama")).toHaveValue("Mi");
+  });
 });

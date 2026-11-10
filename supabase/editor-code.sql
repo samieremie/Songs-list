@@ -1,10 +1,13 @@
--- Editor code: only people who know the shared code can add or delete songs.
+-- Editor code: only people who know the shared code can add, edit or delete songs.
 -- Run once in the Supabase dashboard: SQL Editor > New query > paste > Run.
 -- Then set the code with the block at the end of this file (never commit it).
 --
--- After this runs, the browser can no longer insert or delete rows in `songs`
--- directly. It goes through add_song() / delete_song(), which check the code.
--- Anyone can still read songs and update last_sung ("Marchează cântată azi").
+-- After this runs, the browser can no longer insert, edit or delete rows in
+-- `songs` directly. It goes through add_song() / update_song() / delete_song(),
+-- which check the code. Anyone can still read songs and update last_sung.
+--
+-- Already ran an older version of this file? Just run the update_song block
+-- (function + its revoke/grant lines) again; the rest is unchanged.
 
 create extension if not exists pgcrypto with schema extensions;
 
@@ -74,6 +77,32 @@ begin
 end;
 $$;
 
+-- Changes a song's title and key.
+create or replace function public.update_song(
+  p_id bigint,
+  p_title text,
+  p_music_scale text,
+  p_code text
+) returns songs
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  updated songs;
+begin
+  perform private.assert_editor_code(p_code);
+  update songs
+     set title = p_title, music_scale = p_music_scale
+   where id = p_id
+  returning * into updated;
+  return updated;
+end;
+$$;
+
+revoke all on function public.update_song(bigint, text, text, text) from public;
+grant execute on function public.update_song(bigint, text, text, text) to anon, authenticated;
+
 -- Its setlist_songs rows go with it (cascade).
 create or replace function public.delete_song(p_id bigint, p_code text) returns void
 language plpgsql
@@ -93,7 +122,7 @@ grant execute on function public.check_editor_code(text) to anon, authenticated;
 grant execute on function public.add_song(text, text, text) to anon, authenticated;
 grant execute on function public.delete_song(bigint, text) to anon, authenticated;
 
--- Lock the songs table: read and "mark as sung" stay open, nothing else.
+-- Lock the songs table: reading and updating last_sung stay open, nothing else.
 alter table songs enable row level security;
 
 do $$

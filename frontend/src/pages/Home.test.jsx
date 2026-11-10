@@ -164,6 +164,93 @@ describe("Home", () => {
     expect(screen.getByRole("dialog", { name: "Introdu codul de editor" })).toBeInTheDocument();
   });
 
+  describe("editing a song", () => {
+    const openEdit = async (user) => {
+      await user.click(await screen.findByRole("button", { name: /Aleluia/ }));
+      await user.click(screen.getByRole("button", { name: "Modifică" }));
+    };
+
+    const changeKeyAndSave = async (user, key) => {
+      const sheet = screen.getByRole("dialog", { name: "Modifică cântarea" });
+      const scale = within(sheet).getByLabelText("Gama");
+      expect(scale).toHaveValue("Sol");
+      await user.clear(scale);
+      await user.type(scale, key);
+      await user.click(within(sheet).getByRole("button", { name: "Salvează" }));
+      return sheet;
+    };
+
+    it("saves the new key with the stored code and updates the row", async () => {
+      window.localStorage.setItem("editorCode", "secret");
+      const user = userEvent.setup();
+      renderHome();
+      await openEdit(user);
+
+      mock.current.query.result = { data: null, error: null };
+      await changeKeyAndSave(user, "Mi");
+
+      expect(mock.current.client.rpc).toHaveBeenCalledWith("update_song", {
+        p_id: 2,
+        p_title: "Aleluia",
+        p_music_scale: "Mi",
+        p_code: "secret",
+      });
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(screen.getByText("„Aleluia” a fost modificată.")).toBeInTheDocument();
+      const row = screen.getByRole("button", { name: /Aleluia/ });
+      expect(within(row).getByText("Mi")).toBeInTheDocument();
+    });
+
+    it("asks for the editor code first when this device has none", async () => {
+      const user = userEvent.setup();
+      renderHome();
+      await openEdit(user);
+
+      const codeSheet = screen.getByRole("dialog", { name: "Introdu codul de editor" });
+      mock.current.query.result = { data: true, error: null };
+      await user.type(within(codeSheet).getByLabelText("Cod de editor"), "secret");
+      await user.click(within(codeSheet).getByRole("button", { name: "Continuă" }));
+
+      expect(screen.getByRole("dialog", { name: "Modifică cântarea" })).toBeInTheDocument();
+    });
+
+    it("keeps the sheet open with a Romanian error when saving fails", async () => {
+      window.localStorage.setItem("editorCode", "secret");
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const user = userEvent.setup();
+      renderHome();
+      await openEdit(user);
+
+      mock.current.query.result = { data: null, error: { message: "boom" } };
+      const sheet = await changeKeyAndSave(user, "Mi");
+
+      expect(
+        within(sheet).getByText("Cântarea nu a putut fi modificată. Încearcă din nou.")
+      ).toBeInTheDocument();
+      expect(within(sheet).getByLabelText("Gama")).toHaveValue("Mi");
+    });
+
+    it("forgets the code when it has changed", async () => {
+      window.localStorage.setItem("editorCode", "old");
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const user = userEvent.setup();
+      renderHome();
+      await openEdit(user);
+
+      mock.current.query.result = {
+        data: null,
+        error: { code: "28000", message: "invalid_editor_code" },
+      };
+      await changeKeyAndSave(user, "Mi");
+
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(
+        screen.getByText("Codul de editor s-a schimbat. Introdu-l din nou.")
+      ).toBeInTheDocument();
+      expect(window.localStorage.getItem("editorCode")).toBeNull();
+    });
+  });
+
   it("shows a Romanian error message when songs cannot be loaded", async () => {
     mock.current = createSupabaseMock({ data: null, error: { message: "boom" } });
     vi.spyOn(console, "error").mockImplementation(() => {});

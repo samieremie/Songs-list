@@ -55,7 +55,7 @@ function EditorCodeForm({ onValid, notice }) {
           aria-describedby={error ? "editor-code-error editor-code-hint" : "editor-code-hint"}
         />
         <p id="editor-code-hint" className="editor-code-hint">
-          Doar responsabilii pot adăuga sau șterge cântări.
+          Doar responsabilii pot adăuga, modifica sau șterge cântări.
         </p>
         {error && (
           <p id="editor-code-error" className="field-error" role="alert">

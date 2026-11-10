@@ -7,6 +7,7 @@ function SongCard({
   plannedDates = [],
   expanded = false,
   onToggle,
+  onEdit,
   onDelete,
   onAddToSetlist,
 }) {
@@ -56,6 +57,9 @@ function SongCard({
           onClick={() => onAddToSetlist(song)}
         >
           Adaugă în sub-listă
+        </button>
+        <button type="button" className="btn btn-outline" onClick={() => onEdit(song)}>
+          Modifică
         </button>
         <button
           type="button"

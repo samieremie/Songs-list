@@ -1,9 +1,16 @@
 import { useState } from "react";
 import "../css/SongForm.css";
 
-function SongForm({ onSubmit, initialTitle = "" }) {
+function SongForm({
+  onSubmit,
+  initialTitle = "",
+  initialMusicScale = "",
+  submitLabel = "Adaugă cântarea",
+  submittingLabel = "Se adaugă…",
+  resetOnSuccess = true,
+}) {
   const [title, setTitle] = useState(initialTitle);
-  const [musicScale, setMusicScale] = useState("");
+  const [musicScale, setMusicScale] = useState(initialMusicScale);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -22,7 +29,7 @@ function SongForm({ onSubmit, initialTitle = "" }) {
     const ok = await onSubmit({ title: cleanTitle, musicScale: cleanScale });
     setSubmitting(false);
 
-    if (ok !== false) {
+    if (ok !== false && resetOnSuccess) {
       setTitle("");
       setMusicScale("");
     }
@@ -69,7 +76,7 @@ function SongForm({ onSubmit, initialTitle = "" }) {
       </div>
 
       <button type="submit" className="btn btn-sun song-form-submit" disabled={submitting}>
-        {submitting ? "Se adaugă…" : "Adaugă cântarea"}
+        {submitting ? submittingLabel : submitLabel}
       </button>
     </form>
   );

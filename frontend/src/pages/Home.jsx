@@ -6,7 +6,8 @@ import LetterIndex from "../components/LetterIndex";
 import ConfirmSheet from "../components/ConfirmSheet";
 import SetlistPickerSheet from "../components/SetlistPickerSheet";
 import EditorCodeSheet from "../components/EditorCodeSheet";
-import { deleteSong, isInvalidCodeError, listSongs } from "../api/songs";
+import EditSongSheet from "../components/EditSongSheet";
+import { deleteSong, isInvalidCodeError, listSongs, updateSong } from "../api/songs";
 import { addSongToSetlist, listUpcomingSetlists, removeSongFromSetlist } from "../api/setlists";
 import { todayISO } from "../utils/dates";
 import { clearEditorCode, getEditorCode } from "../utils/editorCode";
@@ -32,9 +33,12 @@ function Home() {
   const [query, setQuery] = useState("");
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  // Deleting needs the shared editor code; asked once, then remembered.
+  // Editing and deleting need the shared editor code; asked once, then remembered.
   const [editorCode, setEditorCode] = useState(getEditorCode);
-  const [codeRequestSong, setCodeRequestSong] = useState(null);
+  // { song, action: "edit" | "delete" } while the code sheet is open.
+  const [codeRequest, setCodeRequest] = useState(null);
+  const [editingSong, setEditingSong] = useState(null);
+  const [editError, setEditError] = useState(null);
   const [logoFailed, setLogoFailed] = useState(false);
   // Upcoming sub-lists: [{ id, date, setlist_songs: [{ song_id, position }] }]
   const [setlists, setSetlists] = useState([]);
@@ -97,17 +101,58 @@ function Home() {
   }, [setlists]);
 
   const cancelDelete = useCallback(() => setPendingDelete(null), []);
-  const cancelCodeRequest = useCallback(() => setCodeRequestSong(null), []);
+  const cancelCodeRequest = useCallback(() => setCodeRequest(null), []);
+  const closeEdit = useCallback(() => {
+    setEditingSong(null);
+    setEditError(null);
+  }, []);
 
   const requestDelete = (song) => {
     if (editorCode) setPendingDelete(song);
-    else setCodeRequestSong(song);
+    else setCodeRequest({ song, action: "delete" });
+  };
+
+  const requestEdit = (song) => {
+    if (editorCode) setEditingSong(song);
+    else setCodeRequest({ song, action: "edit" });
   };
 
   const acceptCode = (code) => {
     setEditorCode(code);
-    setPendingDelete(codeRequestSong);
-    setCodeRequestSong(null);
+    if (codeRequest.action === "edit") setEditingSong(codeRequest.song);
+    else setPendingDelete(codeRequest.song);
+    setCodeRequest(null);
+  };
+
+  // The code was changed by the leaders: forget it so it's asked again.
+  const forgetEditorCode = () => {
+    clearEditorCode();
+    setEditorCode(null);
+    setStatusMessage(null);
+    setErrorMessage("Codul de editor s-a schimbat. Introdu-l din nou.");
+  };
+
+  const saveEdit = async ({ title, musicScale }) => {
+    const song = editingSong;
+    const { error } = await updateSong({ id: song.id, title, musicScale, code: editorCode });
+
+    if (error) {
+      console.error("Error updating song:", error.message);
+      if (isInvalidCodeError(error)) {
+        closeEdit();
+        forgetEditorCode();
+      } else {
+        setEditError("Cântarea nu a putut fi modificată. Încearcă din nou.");
+      }
+      return false;
+    }
+    setSongs((prev) =>
+      prev.map((s) => (s.id === song.id ? { ...s, title, music_scale: musicScale } : s))
+    );
+    closeEdit();
+    setErrorMessage(null);
+    setStatusMessage(`„${title}” a fost modificată.`);
+    return true;
   };
   const closePicker = useCallback(() => setPickerSong(null), []);
 
@@ -147,9 +192,7 @@ function Home() {
       console.error("Error deleting song:", error.message);
       setStatusMessage(null);
       if (isInvalidCodeError(error)) {
-        clearEditorCode();
-        setEditorCode(null);
-        setErrorMessage("Codul de editor s-a schimbat. Introdu-l din nou.");
+        forgetEditorCode();
       } else {
         setErrorMessage("Cântarea nu a putut fi ștearsă. Încearcă din nou.");
       }
@@ -241,6 +284,7 @@ function Home() {
                 plannedDates={plannedDates.get(song.id)}
                 expanded={openSongId === song.id}
                 onToggle={() => toggleSong(song.id)}
+                onEdit={requestEdit}
                 onDelete={requestDelete}
                 onAddToSetlist={setPickerSong}
               />
@@ -261,8 +305,15 @@ function Home() {
         />
       )}
 
-      {codeRequestSong && (
-        <EditorCodeSheet onValid={acceptCode} onClose={cancelCodeRequest} />
+      {codeRequest && <EditorCodeSheet onValid={acceptCode} onClose={cancelCodeRequest} />}
+
+      {editingSong && (
+        <EditSongSheet
+          song={editingSong}
+          error={editError}
+          onSave={saveEdit}
+          onClose={closeEdit}
+        />
       )}
 
       {pendingDelete && (

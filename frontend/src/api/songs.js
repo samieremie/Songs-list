@@ -7,10 +7,19 @@ export function listSongs() {
   return supabase.from("songs").select();
 }
 
-// Adding and deleting go through database functions that check the shared
-// editor code (see supabase/editor-code.sql).
+// Adding, editing and deleting go through database functions that check the
+// shared editor code (see supabase/editor-code.sql).
 export function addSong({ title, musicScale, code }) {
   return supabase.rpc("add_song", { p_title: title, p_music_scale: musicScale, p_code: code });
+}
+
+export function updateSong({ id, title, musicScale, code }) {
+  return supabase.rpc("update_song", {
+    p_id: id,
+    p_title: title,
+    p_music_scale: musicScale,
+    p_code: code,
+  });
 }
 
 export function deleteSong(id, code) {
